@@ -26,12 +26,9 @@ export class App extends Component {
         qr_open: false,
         qr_hasClosed: false,
         qr_placeholder: "",
-        qr_feedbackCollected: false,
         invite_url: "",
-        credential_accepted: true,
-        has_been_revoked: true,
-        loading: false,
-        register: true
+        credential_accepted: false,
+        loading: false
     };
 
     handleSubmit() {
@@ -48,103 +45,56 @@ export class App extends Component {
             });
         }, 3000);
     }
-
-    onIssue = async () => {
+    onIssue = () => {
         const ebayDSR = {
             name: this.state.name,
             score: this.state.score
         }
-        this.setState({
-            credential_accepted: false
+        console.log(ebayDSR);
+        axios.post('/api/issue', ebayDSR).then((response) => {
+            console.log(response);
+            this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
         });
-        await axios.post('/api/issue', ebayDSR);
-
-        // axios.post('/api/issue', ebayDSR).then((response) => {
-        //     console.log(response);
-        //     this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
-        // });
-        // this.setState({
-        //     qr_open: true,
-        //     qr_placeholder: this.state,
-        //     qr_hasClosed: true
-        // })
-        // axios.post('/api/connected', ebayDSR).then((response) => {
-        //     this.setState({
-        //         qr_open: false
-        //     })
-        // });
-        await axios.post('/api/credential_accepted', ebayDSR);
-        this.setState({ 
-            credential_accepted: true,
-            has_been_revoked: false
-        });
-
-    }
-
-    // onReIssue = async () => {
-    //     const ebayDSR = {
-    //         name: this.state.name,
-    //         score: this.state.score
-    //     }
-    //     console.log("ReIssue credentials...");
-    //     await axios.post('/api/issue', ebayDSR);
-    //     console.log("Bollocks");
-    //     this.setState({
-    //         has_been_revoked: false,
-    //     });
-    // }
-
-    onRevoke = async () => {
-
-        console.log("Revoking credentials...");
-        await axios.post('/api/revoke', null);
-
-        this.setState({
-            has_been_revoked: true,
-        });
-    }
-
-    postRegister = async () => {
-        // const ebayDSR = {
-        //     name: this.state.name,
-        //     score: this.state.score
-        // }
-        // console.log(ebayDSR);
-        const response = await axios.post('/api/register', null);
-        console.log(response);
-        this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
-        
-        await axios.post('/api/connected', null);
-        this.setState({
-            qr_open: false,
-            credential_accepted: false 
-        });
-
-        await axios.post('/api/credential_accepted', null);
-        this.setState({ 
-            credential_accepted: true 
-        });
-    }
-
-    register = () => {
         this.setState({
             qr_open: true,
             qr_placeholder: this.state,
             qr_hasClosed: true
-        });
-        if (!this.state.connected) {
-            this.postRegister();
-            return;
-        }
-
-        axios.post('/api/connected', null).then((response) => {
+        })
+        axios.post('/api/connected', ebayDSR).then((response) => {
             this.setState({
-                qr_open: false,
-                connected: true
-            });
-            this.postRegister();
+                qr_open: false
+            })
+        });
+        axios.post('/api/credenial_accepted', ebayDSR).then((response) => {
+            this.setState({
+                credential_accepted: true
+            })
         });
 
+    }
+    onReIssue = () => {
+        const ebayDSR = {
+            name: this.state.name,
+            score: this.state.score
+        }
+        console.log("ReIssue credentials...");
+        axios.post('/api/reissue', ebayDSR).then((response) => {
+            console.log("Bollocks");
+        });
+        this.setState({
+            qr_hasBeenRevoked: false,
+        });
+    }
+
+    onRevoke = () => {
+
+        console.log("Revoking credentials...");
+        axios.post('/api/revoke', null).then((response) => {
+            console.log("Bollocks");
+        });
+        this.setState({
+            qr_hasBeenRevoked: true,
+        });
     }
 
     onFeedback = () => {
@@ -161,19 +111,8 @@ export class App extends Component {
         }
     }
 
-    getInitialAcceptedLabel() {
-        console.log("QUACK 1 credential_accepted = ", this.credential_accepted);
-        return (this.state.credential_accepted ? "Import User Credentials from eBay" : "Awaiting Acceptance...");
-    }
-
-    getAcceptedLabelRevoke() {
-        console.log("QUACK 2 credential_accepted = ", this.credential_accepted);
+    getAcceptedLabel() {
         return (this.state.credential_accepted ? "Revoke Credential" : "Awaiting Acceptance...");
-    }
-
-    getAcceptedLabelIssue() {
-        console.log("QUACK 3 credential_accepted = ", this.credential_accepted);
-        return (this.state.credential_accepted ? "Issue Credential" : "Awaiting Acceptance...");
     }
 
     getDisabled() {
@@ -183,27 +122,27 @@ export class App extends Component {
     button() {
         if (!this.state.qr_feedbackCollected) {
             return (<Button style={{ backgroundColor: '#9b84ff' }}
-                onClick={() => this.onFeedback()} disabled={this.getDisabled()}>
-                {this.getInitialAcceptedLabel()} 
+                onClick={() => this.onFeedback()}>
+                Import Credential from eBay
             </Button>)
-        } else if (!this.state.has_been_revoked) {
-            return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled()}
+        } else if (this.state.qr_hasBeenRevoked) {
+            return (<Button style={{ backgroundColor: '#9b84ff' }}
+                onClick={() => this.onReIssue()}>
+                ReIssue Credential
+            </Button>)
+        } else if (this.state.qr_hasClosed) {
+            return (<Button style={{ backgroundColor: '#9b84ff' }}  disabled = {this.getDisabled()}
                 onClick={() => this.onRevoke()}>
-                {this.getAcceptedLabelRevoke()}
+                {this.getAcceptedLabel()}
             </Button>)
         } else {
-            return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled()}
-                onClick={() => this.onIssue()} >
-                 {this.getAcceptedLabelIssue()}
+            return (<Button style={{ backgroundColor: '#9b84ff' }}
+                onClick={() => this.onIssue()}>
+                Issue Credential
             </Button>)
         }
 
     }
-
-    getQRCodeLabel() {
-        return this.state.register ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
-    }
-
     render() {
         const card = this.state
         return (
@@ -216,11 +155,8 @@ export class App extends Component {
                             eBay Seller Rating Demo
                         </Typography>
                         <div style={{ flexGrow: 1 }}></div>
-                        <Button style={{ color: 'white' }} onClick={() => this.register()}>
-                            Register
-                        </Button>
-                        <Button style={{ color: 'white' }} onClick={() => this.login()}>
-                            Login
+                        <Button href="https://www.streetcred.id" style={{ color: 'white' }}>
+                            Capena
                         </Button>
                     </Toolbar>
                 </AppBar>
@@ -284,7 +220,7 @@ export class App extends Component {
                     </Paper>
                 </div>
                 <Dialog open={this.state.qr_open} onClose={() => this.setState({ qr_open: false, qr_hasClosed: true })}>
-                    <DialogTitle style={{ width: "300px" }}>{this.getQRCodeLabel()}</DialogTitle>
+                    <DialogTitle style={{ width: "300px" }}>Scan this QR code</DialogTitle>
                     <QRcode size="200" value={this.state.invite_url} style={{ margin: "0 auto", padding: "10px" }} />
                 </Dialog>
             </div>
