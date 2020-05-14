@@ -1,8 +1,8 @@
-# Streetcred's API Quickstart
+# Portable Reputation Demo Using StreetCred API
 This demo shows how to add Streetcred API calls into a nodejs app with our service client. It also shows a webhook implementation can create automated workflows in your app. 
 
 ## Use Case
-In this simple use case, you control a (very simple) issuer portal for your organization, which can issue a business card to anyone with a mobile wallet in your organization. Once a business card is issued, that holder can do business card verifications to other peers using the Streetcred mobile app. 
+In this simple use case, you control a (very simple) issuer portal for your organization, which can issue eBay seller ratings to anyone with an ebay seller account and a mobile wallet in your organization. Once credentials are issued, that holder can do ratings verifications to other peers using the Streetcred mobile app. 
 
 ## Prerequisites:
 - [npm](https://www.npmjs.com/get-npm)
@@ -12,7 +12,7 @@ In this simple use case, you control a (very simple) issuer portal for your orga
  1. If you are using iOS, download the [streetcred identity agent](https://apps.apple.com/us/app/streetcred-identity-agent/id1475160728)
  
 ### Android
- 1. If you are using Android, download the [Mattr Proton Wallet](https://redir.streetcred.id/lRaAnnBiSkZx)
+ 1. If you are using Android, download the StreetCred App from google play store
 
 ## Steps to issue a business card: 
 
