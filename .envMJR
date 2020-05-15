@@ -1,0 +1,21 @@
+# ------------- Developer Credentials ----------------- #
+ACCESSTOK='2II5whwj_Rytx2AMOUjUIjd03cdW4BmMDPedCQjAR7k'
+SUBKEY='e38cd0e5a43544cd92e1b19042e59b4b'
+
+# ------------- Credential Definition ----------------- #
+# CRED_DEF_ID='F6C3JXVhkj458yefosZ7XF:3:CL:87405:string'
+# CRED_DEF_ID='F6C3JXVhkj458yefosZ7XF:3:CL:100866:default'
+CRED_DEF_ID='F6C3JXVhkj458yefosZ7XF:3:CL:101416:default'
+
+# ------------- Sovrin Staging Schema ------------------- #
+# SCHEMA_ID='F6C3JXVhkj458yefosZ7XF:2:eBay Detailed Seller Rating:3.0'
+# SCHEMA_ID='F6C3JXVhkj458yefosZ7XF:2:eBay Small Feedback:1.0'
+SCHEMA_ID='F6C3JXVhkj458yefosZ7XF:2:eBay Small Feedback With Revocation:1.0'
+
+CRED_DEF_ID_ACCESS_KEY='F6C3JXVhkj458yefosZ7XF:3:CL:102128:default'
+
+SCHEMA_ID_ACCESS_KEY='F6C3JXVhkj458yefosZ7XF:2:Capena Registration Key:1.0'
+
+CRED_DEF_ID_USER_DETAILS='F6C3JXVhkj458yefosZ7XF:3:CL:102533:default'
+
+

@@ -29,6 +29,7 @@ let connectionId;
 let connected = true;
 let registered = false;
 let credentialAccepted = false;
+let verificationAccepted = false;
 
 
 // WEBHOOK ENDPOINT
@@ -39,37 +40,26 @@ app.post('/webhook', async function (req, res) {
             registered = true;
             connectionId = req.body.object_id;
             console.log("new connection notif, connectionId = ", connectionId);
-            // const attribs = cache.get(req.body.object_id);
-            // console.log("attribs = ", attribs);
-            // var param_obj = JSON.parse(attribs);
-            // var params =
-            // {
-            //     credentialOfferParameters: {
-            //         definitionId: process.env.CRED_DEF_ID,
-            //         connectionId: req.body.object_id,
-            //         credentialValues: {
-            //             "User Name": param_obj["name"],
-            //             "Feedback Score": param_obj["score"]
-            //         }
-            //     }
-            // }
 
-            const secret = new Date().getTime().toString();
-            const hash = crypto.createHmac('sha256', secret)
-                .digest('hex');
-            console.log(hash);
+            const attribs = cache.get(req.body.object_id);
+            console.log("QUACK 2 attribs from cache = ", attribs);
+            var param_obj = JSON.parse(attribs);
             var params =
             {
                 credentialOfferParameters: {
-                    definitionId: process.env.CRED_DEF_ID_ACCESS_KEY,
+                    definitionId: process.env.CRED_DEF_ID_USER_DETAILS,
                     connectionId: req.body.object_id,
                     credentialValues: {
-                        "User Key": hash
+                        'First Name': param_obj["firstname"],
+                        'Last Name': param_obj["lastname"],
+                        'Email Address': param_obj["email"],
+                        'Country': param_obj["country"]
                     }
                 }
             }
+            console.log(">>>>>>>>>>>>> Creating credential with params ", params);
             await client.createCredential(params);
-            console.log("CREDENTIAL CREATED user key!");
+            console.log("CREDENTIAL CREATED user details!");
         }
         else if (req.body.message_type === 'credential_request') {
             console.log("cred request notif");
@@ -82,7 +72,12 @@ app.post('/webhook', async function (req, res) {
             // }
         }
         else if (req.body.message_type === 'verification') {
-            console.log("webhook req object = ", req)
+            console.log("cred verificatation notif");
+            console.log("WOOF body = ", req);
+            verificationAccepted = true;
+        } else {
+            console.log("QUACK WEBHOOK message_type = ", req.body.message_type);
+            console.log("body = ", req.body);
         }
     }
     catch (e) {
@@ -112,30 +107,13 @@ app.post('/api/issue', cors(), async function (req, res) {
 app.post('/api/register', cors(), async function (req, res) {
     console.log("Getting invite...")
     const invite = await getInvite();
-    // const attribs = JSON.stringify(req.body);
-
+    console.log("QUACK write to cache: ", req.body);
+    const attribs = JSON.stringify(req.body);
     console.log("invite= ", invite);
-    // cache.add(invite.connectionId, attribs);
+    cache.add(invite.connectionId, attribs);
     // connectionId = invite.connectionId;
     res.status(200).send({ invite_url: invite.invitation });
 });
-
-// app.post('/api/reissue', cors(), async function (req, res) {
-//     console.log("reissue params = ", req.body);
-//     var params =
-//     {
-//         credentialOfferParameters: {
-//             definitionId: process.env.CRED_DEF_ID,
-//             connectionId: connectionId,
-//             credentialValues: {
-//                 "User Name": req.body["name"],
-//                 "Feedback Score": req.body["score"]
-//             }
-//         }
-//     }
-//     await client.createCredential(params);
-//     res.status(200).send();
-// });
 
 app.post('/api/revoke', cors(), async function (req, res) {
     console.log("revoking credential, id = ", credentialId);
@@ -158,27 +136,44 @@ app.post('/api/credential_accepted', cors(), async function (req, res) {
     res.status(200).send();
 });
 
+app.post('/api/verification_accepted', cors(), async function (req, res) {
+    console.log("Waiting for proof request (verification) to be accepted...");
+    await utils.until(_ => verificationAccepted === true);
+    verificationAccepted = false;
+    res.status(200).send();
+});
+
+
+
 app.post('/api/sendkeyverification', cors(), async function (req, res) {
 
     // need to call client.sendVerificationFromParameters
     // use VerificationPolicyParameters for params
+
     var params =
     {
+
+        // {  "name": "ebay credentials 2",  "version": "1.0",  "attributes": [    {      "policyName": "EBay Feedback With Revocation",      "attributeNames": [        "User Name",        "Feedback Score"      ],      "restrictions": null    }  ],  "predicates": [],  "revocationRequirement": null}
         verificationPolicyParameters: {
-            "name": "Verify Key",
+            "name": "Please Present eBay Credentials",
             "version": "1.0",
             "attributes": [
                 {
-                    "policyName": "User Key",
+                    "policyName": "eBay Verification With Cred Def Id",
                     "attributeNames": [
-                        "User Key"
-                    ]
+                        "User Name",
+                        "Feedback Score"
+                    ],
+                    "restrictions": null
                 }
             ],
             "predicates": []
         }
     }
-    await client.sendVerificationFromParameters(connectionId, params);
+    connectionId = "unique id";
+    console.log("send verification request, connectionId = ", connectionId, "; params = ", params);
+    let resp = await client.sendVerificationFromParameters(connectionId, params);
+    console.log("BARKING MAD resp = ", resp);
     res.status(200).send();
 });
 

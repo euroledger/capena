@@ -10,7 +10,9 @@ import { TextField } from "@material-ui/core";
 import axios from 'axios';
 import QRcode from 'qrcode.react';
 import Spinner from './Spinner';
-
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
 
 // import logo from "./"; {/*add streetcred logo*/}
 
@@ -29,11 +31,29 @@ export class App extends Component {
         qr_feedbackCollected: false,
         invite_url: "",
         credential_accepted: true,
+        verification_accepted: true,
         has_been_revoked: true,
         loading: false,
-        register: true
+        register: true,
+        form_open: false,
+        firstname: '',
+        lastname: '',
+        email: '',
+        country: ''
     };
 
+    handleClickOpen = () => {
+        this.setState({
+            form_open: true
+        });
+    };
+
+    handleClose = (value) => {
+        this.setState({
+            form_open: false
+        });
+        // setSelectedValue(value);
+    };
     handleSubmit() {
         this.setState({
             loading: true
@@ -74,25 +94,13 @@ export class App extends Component {
         //     })
         // });
         await axios.post('/api/credential_accepted', ebayDSR);
-        this.setState({ 
+        this.setState({
             credential_accepted: true,
             has_been_revoked: false
         });
 
     }
 
-    // onReIssue = async () => {
-    //     const ebayDSR = {
-    //         name: this.state.name,
-    //         score: this.state.score
-    //     }
-    //     console.log("ReIssue credentials...");
-    //     await axios.post('/api/issue', ebayDSR);
-    //     console.log("Bollocks");
-    //     this.setState({
-    //         has_been_revoked: false,
-    //     });
-    // }
 
     onRevoke = async () => {
 
@@ -104,48 +112,70 @@ export class App extends Component {
         });
     }
 
+    onVerify = async () => {
+        this.setState({
+            verification_accepted: false,
+        });
+        console.log("Verifying credentials...");
+        await axios.post('/api/sendkeyverification', null);
+        await axios.post('/api/verification_accepted', null);
+        this.setState({
+            verification_accepted: true,
+            has_been_revoked: false
+        });
+    }
+
     postRegister = async () => {
-        // const ebayDSR = {
-        //     name: this.state.name,
-        //     score: this.state.score
-        // }
-        // console.log(ebayDSR);
-        const response = await axios.post('/api/register', null);
+        const registrationInfo = {
+            firstname: this.state.firstname,
+            lastname: this.state.lastname,
+            email: this.state.email,
+            country: this.state.country
+        }
+        console.log(registrationInfo);
+        const response = await axios.post('/api/register', registrationInfo);
         console.log(response);
         this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
-        
+
         await axios.post('/api/connected', null);
         this.setState({
             qr_open: false,
-            credential_accepted: false 
+            credential_accepted: false
         });
 
         await axios.post('/api/credential_accepted', null);
-        this.setState({ 
-            credential_accepted: true 
+        this.setState({
+            credential_accepted: true
         });
     }
 
     register = () => {
         this.setState({
-            qr_open: true,
-            qr_placeholder: this.state,
-            qr_hasClosed: true
-        });
-        if (!this.state.connected) {
-            this.postRegister();
-            return;
-        }
-
-        axios.post('/api/connected', null).then((response) => {
-            this.setState({
-                qr_open: false,
-                connected: true
-            });
-            this.postRegister();
+            form_open: true
         });
 
     }
+
+    // register = () => {
+    //     this.setState({
+    //         qr_open: true,
+    //         qr_placeholder: this.state,
+    //         qr_hasClosed: true
+    //     });
+    //     if (!this.state.connected) {
+    //         this.postRegister();
+    //         return;
+    //     }
+
+    //     axios.post('/api/connected', null).then((response) => {
+    //         this.setState({
+    //             qr_open: false,
+    //             connected: true
+    //         });
+    //         this.postRegister();
+    //     });
+
+    // }
 
     onFeedback = () => {
         console.log("Getting feedback...")
@@ -162,29 +192,35 @@ export class App extends Component {
     }
 
     getInitialAcceptedLabel() {
-        console.log("QUACK 1 credential_accepted = ", this.credential_accepted);
+
         return (this.state.credential_accepted ? "Import User Credentials from eBay" : "Awaiting Acceptance...");
     }
 
     getAcceptedLabelRevoke() {
-        console.log("QUACK 2 credential_accepted = ", this.credential_accepted);
         return (this.state.credential_accepted ? "Revoke Credential" : "Awaiting Acceptance...");
     }
 
     getAcceptedLabelIssue() {
-        console.log("QUACK 3 credential_accepted = ", this.credential_accepted);
         return (this.state.credential_accepted ? "Issue Credential" : "Awaiting Acceptance...");
+    }
+
+    getAcceptedLabelVerify() {
+        return (this.state.verification_accepted ? "Verify Credential" : "Awaiting Acceptance...");
     }
 
     getDisabled() {
         return (!this.state.credential_accepted);
     }
 
+    getVerifyDisabled() {
+        return (this.state.has_been_revoked || !(this.state.verification_accepted));
+    }
+
     button() {
         if (!this.state.qr_feedbackCollected) {
             return (<Button style={{ backgroundColor: '#9b84ff' }}
                 onClick={() => this.onFeedback()} disabled={this.getDisabled()}>
-                {this.getInitialAcceptedLabel()} 
+                {this.getInitialAcceptedLabel()}
             </Button>)
         } else if (!this.state.has_been_revoked) {
             return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled()}
@@ -194,14 +230,42 @@ export class App extends Component {
         } else {
             return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled()}
                 onClick={() => this.onIssue()} >
-                 {this.getAcceptedLabelIssue()}
+                {this.getAcceptedLabelIssue()}
             </Button>)
         }
 
     }
 
+    button2() {
+        return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled()}
+            onClick={() => this.onVerify()}>
+            {this.getAcceptedLabelVerify()}
+        </Button>)
+    }
+
     getQRCodeLabel() {
         return this.state.register ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
+    }
+
+    handleClose() {
+        this.setState({
+            form_open: false
+        });
+    }
+
+    handleFormSubmit(event) {
+        event.preventDefault();
+        console.log("firstname = ", this.state.firstname);
+        console.log("lastname = ", this.state.lastname);
+        console.log("email = ", this.state.email);
+        console.log("country = ", this.state.country);
+
+        // we want to send this info across to the user's wallet
+        // call the 
+        this.setState({
+            qr_open: true
+        });
+        this.postRegister();
     }
 
     render() {
@@ -213,7 +277,7 @@ export class App extends Component {
                     <Toolbar style={{ backgroundColor: '#812bff' }}>
                         <img style={{}} />
                         <Typography variant="h6">
-                            eBay Seller Rating Demo
+                            Capena - Delega: eBay Seller Rating Demo
                         </Typography>
                         <div style={{ flexGrow: 1 }}></div>
                         <Button style={{ color: 'white' }} onClick={() => this.register()}>
@@ -280,6 +344,61 @@ export class App extends Component {
                               /> */}
 
                             {this.button()}
+                            {this.button2()}
+                            <Dialog open={this.state.form_open} onClose={() => this.handleClose()} aria-labelledby="form-dialog-title">
+                                <DialogTitle id="form-dialog-title">Register</DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText>
+                                        To register to this website, please enter your name, email address and location here.
+                                </DialogContentText>
+                                    <form noValidate autoComplete="off" onSubmit={(e) => this.handleFormSubmit(e)}>
+                                        <TextField
+                                            margin="dense"
+                                            id="firstname"
+                                            label="First Name"
+                                            value={this.state.firstname}
+                                            onChange={(e) => this.setState({ firstname: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            margin="dense"
+                                            id="lastname"
+                                            label="Last Name"
+                                            value={this.state.lastname}
+                                            onChange={(e) => this.setState({ lastname: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            margin="dense"
+                                            id="email"
+                                            label="Email Address"
+                                            type="email"
+                                            value={this.state.email}
+                                            onChange={(e) => this.setState({ email: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            margin="dense"
+                                            id="country"
+                                            label="Country"
+                                            type="country"
+                                            value={this.state.country}
+                                            onChange={(e) => this.setState({ country: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <DialogActions>
+                                            <Button onClick={() => this.handleClose()} color="primary">
+                                                Cancel
+                                </Button>
+                                            <Button type="submit" onClick={() => this.handleClose()} color="primary">
+                                                Register
+                                </Button>
+                                        </DialogActions>
+                                    </form>
+
+                                </DialogContent>
+
+                            </Dialog>
                         </div>
                     </Paper>
                 </div>
