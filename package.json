@@ -6,31 +6,38 @@
   "dependencies": {
     "@emotion/core": "^10.0.28",
     "@godaddy/terminus": "^4.2.0",
-    "@material-ui/core": "^4.4.3",
+    "@hendt/ebay-api": "^1.0.1",
+    "@material-ui/core": "^4.9.14",
     "@material-ui/icons": "^4.9.1",
-    "@streetcred.id/service-clients": "^1.1.1424",
+    "@streetcred.id/service-clients": "^1.1.3102",
     "axios": "^0.19.0",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^8.1.0",
+    "ebay-oauth-nodejs-client": "^1.2.0",
     "express": "^4.17.1",
+    "express-http-proxy": "^1.6.0",
     "express-session": "^1.16.2",
+    "localtunnel": "^2.0.0",
     "material-ui": "^0.20.2",
     "ngrok": "^3.2.5",
     "node-env-run": "^3.0.2",
     "nodemon": "^1.19.2",
     "npm-run-all": "^4.1.5",
+    "passport": "^0.4.1",
+    "passport-ebay": "^1.0.1-beta",
+    "passport-oauth2": "^1.5.0",
     "qrcode": "^1.4.2",
     "qrcode.react": "^0.9.3",
     "react": "^16.10.1",
     "react-dom": "^16.10.1",
-    "react-router-dom": "^5.1.2",
+    "react-router-dom": "^5.2.0",
     "react-scripts": "3.1.2",
     "react-spinners": "^0.8.3",
     "redis": "^2.8.0",
     "serve": "^11.2.0",
-    "sleep": "^6.1.0",
-    "typescript": "^3.6.3"
+    "sleep": "^6.2.0",
+    "typescript": "^3.9.3"
   },
   "scripts": {
     "start": "run-p server frontend",
@@ -55,6 +62,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ],
-    "proxy": "http://localhost:3002"
+    "proxy": "https://localhost:3002"
   }
 }

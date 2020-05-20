@@ -16,7 +16,9 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 
 // import logo from "./"; {/*add streetcred logo*/}
 
-axios.defaults.baseURL = 'http://localhost:3002/';
+axios.defaults.baseURL = 'https://localhost:3002/';
+axios.defaults.headers.post['Content-Type'] ='application/json;charset=utf-8';
+axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 export class App extends Component {
     state = {
         name: "",
@@ -35,25 +37,15 @@ export class App extends Component {
         has_been_revoked: true,
         loading: false,
         register: true,
-        form_open: false,
+        register_form_open: false,
+        login: false,
+        login_form_open: false,
         firstname: '',
         lastname: '',
         email: '',
         country: ''
     };
 
-    handleClickOpen = () => {
-        this.setState({
-            form_open: true
-        });
-    };
-
-    handleClose = (value) => {
-        this.setState({
-            form_open: false
-        });
-        // setSelectedValue(value);
-    };
     handleSubmit() {
         this.setState({
             loading: true
@@ -64,7 +56,7 @@ export class App extends Component {
                 qr_feedbackCollected: true,
                 loading: false,
                 name: 'Spock',
-                score: '2013'
+                score: '2019'
             });
         }, 3000);
     }
@@ -125,6 +117,35 @@ export class App extends Component {
         });
     }
 
+    getLoginLabel() {
+        return this.state.login ? this.state.email : "Login"
+    }
+
+    postLogin = async () => {
+        console.log("hello from postLogin!");
+
+        // this.setState({
+        //     credential_accepted: false
+        // });
+        const loginInfo = { email: this.state.email };
+        let resp;
+        try {
+            resp = await axios.post('/api/login', loginInfo);
+        }
+        catch (e) {
+            console.log(e);
+        }
+
+        if (resp && resp.status === 200) {
+            this.setState({
+                login: true,
+            });
+        } else {
+            console.log("no connection found")
+        }
+    }
+
+
     postRegister = async () => {
         const registrationInfo = {
             firstname: this.state.firstname,
@@ -151,35 +172,28 @@ export class App extends Component {
 
     register = () => {
         this.setState({
-            form_open: true
-        });
-
+            register_form_open: true
+        })
     }
 
-    // register = () => {
-    //     this.setState({
-    //         qr_open: true,
-    //         qr_placeholder: this.state,
-    //         qr_hasClosed: true
-    //     });
-    //     if (!this.state.connected) {
-    //         this.postRegister();
-    //         return;
-    //     }
+    login = () => {
+        this.setState({
+            login_form_open: true
+        })
+    }
 
-    //     axios.post('/api/connected', null).then((response) => {
-    //         this.setState({
-    //             qr_open: false,
-    //             connected: true
-    //         });
-    //         this.postRegister();
-    //     });
+    ebayAuth = async () => {
+        console.log("Going across to eBay!");
+        const res = await axios.get('/auth/ebay');
 
-    // }
+        console.log("relocate to ", res.data);
+        window.location=res.data;
+    }
 
     onFeedback = () => {
         console.log("Getting feedback...")
-        this.handleSubmit();
+        // this.handleSubmit();
+        this.ebayAuth();
     }
 
     getLabel() {
@@ -192,7 +206,6 @@ export class App extends Component {
     }
 
     getInitialAcceptedLabel() {
-
         return (this.state.credential_accepted ? "Import User Credentials from eBay" : "Awaiting Acceptance...");
     }
 
@@ -247,9 +260,15 @@ export class App extends Component {
         return this.state.register ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
     }
 
-    handleClose() {
+    handleRegisterClose() {
         this.setState({
-            form_open: false
+            register_form_open: false
+        });
+    }
+
+    handleLoginClose() {
+        this.setState({
+            login_form_open: false
         });
     }
 
@@ -268,6 +287,14 @@ export class App extends Component {
         this.postRegister();
     }
 
+    handleLoginFormSubmit(event) {
+        event.preventDefault();
+
+        console.log("email = ", this.state.email);
+
+        this.postLogin();
+    }
+
     render() {
         const card = this.state
         return (
@@ -284,7 +311,7 @@ export class App extends Component {
                             Register
                         </Button>
                         <Button style={{ color: 'white' }} onClick={() => this.login()}>
-                            Login
+                            {this.getLoginLabel()}
                         </Button>
                     </Toolbar>
                 </AppBar>
@@ -345,7 +372,7 @@ export class App extends Component {
 
                             {this.button()}
                             {this.button2()}
-                            <Dialog open={this.state.form_open} onClose={() => this.handleClose()} aria-labelledby="form-dialog-title">
+                            <Dialog open={this.state.register_form_open} onClose={() => this.handleRegisterClose()} aria-labelledby="form-dialog-title">
                                 <DialogTitle id="form-dialog-title">Register</DialogTitle>
                                 <DialogContent>
                                     <DialogContentText>
@@ -387,11 +414,40 @@ export class App extends Component {
                                             fullWidth
                                         />
                                         <DialogActions>
-                                            <Button onClick={() => this.handleClose()} color="primary">
+                                            <Button onClick={() => this.handleRegisterClose()} color="primary">
                                                 Cancel
                                 </Button>
-                                            <Button type="submit" onClick={() => this.handleClose()} color="primary">
+                                            <Button type="submit" onClick={() => this.handleRegisterClose()} color="primary">
                                                 Register
+                                </Button>
+                                        </DialogActions>
+                                    </form>
+
+                                </DialogContent>
+
+                            </Dialog>
+                            <Dialog open={this.state.login_form_open} onClose={() => this.handleLoginClose()} aria-labelledby="form-dialog-title">
+                                <DialogTitle id="form-dialog-title">Login</DialogTitle>
+                                <DialogContent>
+                                    <DialogContentText>
+                                        Please enter the email address you used to register, or register as a new user by clicking on "Register"
+                                </DialogContentText>
+                                    <form noValidate autoComplete="off" onSubmit={(e) => this.handleLoginFormSubmit(e)}>
+                                        <TextField
+                                            margin="dense"
+                                            id="email"
+                                            label="Email Address"
+                                            type="email"
+                                            value={this.state.email}
+                                            onChange={(e) => this.setState({ email: e.target.value })}
+                                            fullWidth
+                                        />
+                                        <DialogActions>
+                                            <Button onClick={() => this.handleLoginClose()} color="primary">
+                                                Cancel
+                                </Button>
+                                            <Button type="submit" onClick={() => this.handleLoginClose()} color="primary">
+                                                Login
                                 </Button>
                                         </DialogActions>
                                     </form>

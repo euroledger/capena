@@ -1,0 +1,16 @@
+{
+    "SANDBOX": {
+        "clientId": "---Client Id---",
+        "clientSecret": "--- client secret---",
+        "devid": "-- dev id ---",
+        "redirectUri": "-- redirect uri ---",
+        "baseUrl": "api.sandbox.ebay.com"
+    },
+    "PRODUCTION": {
+        "clientId": "MikeRich-EuroLedg-PRD-f193ff38b-ecdaff89",
+        "clientSecret": "PRD-193ff38bb57e-c123-43e7-ac39-b145",
+        "devid": "5ac3b11b-0734-4a47-a382-726a92d7a7aa",
+        "redirectUri": "Mike_Richardson-MikeRich-EuroLe-jkelbu",
+        "baseUrl": "api.ebay.com"
+    }
+}

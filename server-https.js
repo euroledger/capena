@@ -8,16 +8,10 @@ const ngrok = require('ngrok');
 const cache = require('./model');
 const utils = require('./utils');
 const EbayAuthToken = require('ebay-oauth-nodejs-client');
-const eBayApi = require('@hendt/ebay-api');
-
+// const passport = require('passport');
+// const { eBayStrategy } = require('./passport/strategy');
 var fs = require('fs');
 var https = require('https');
-var proxy = require('express-http-proxy');
-
-//fix ssl localhost
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-
 
 require('dotenv').config();
 
@@ -43,14 +37,14 @@ let ebayAuthToken = new EbayAuthToken({
     filePath: './ebay-config-sample.json'
 });
 
-// const clientScope = 'https://api.ebay.com/oauth/api_scope';
+const clientScope = 'https://api.ebay.com/oauth/api_scope';
 
 // // Client Crendential Auth Flow
-// ebayAuthToken.getApplicationToken('PRODUCTION', clientScope).then((data) => {
-//     console.log(data);
-// }).catch((error) => {
-//     console.log(`Error to get Access token :${JSON.stringify(error)}`);
-// });
+ebayAuthToken.getApplicationToken('PRODUCTION', clientScope).then((data) => {
+    console.log(data);
+}).catch((error) => {
+    console.log(`Error to get Access token :${JSON.stringify(error)}`);
+});
 
 const scopes = ['https://api.ebay.com/oauth/api_scope'];
 
@@ -79,7 +73,7 @@ app.get(
             console.log(error);
             console.log(`Error to get Access token :${JSON.stringify(error)}`);
         });
-
+       
     }
 );
 
@@ -156,7 +150,6 @@ app.post('/webhook', async function (req, res) {
         else if (req.body.message_type === 'verification') {
             console.log("cred verificatation notif");
             verificationAccepted = true;
-            console.log(req.body);
         } else {
             console.log("WEBHOOK message_type = ", req.body.message_type);
             console.log("body = ", req.body);
@@ -281,14 +274,14 @@ app.post('/api/sendkeyverification', cors(), async function (req, res) {
     // need to call client.sendVerificationFromParameters
     // use VerificationPolicyParameters for params
 
-    const params =
+    var params =
     {
         verificationPolicyParameters: {
-            "name": "ebay2",
+            "name": "Please Present eBay Credentials",
             "version": "1.0",
             "attributes": [
                 {
-                    "policyName": "ebay May 20 (2)",
+                    "policyName": "eBay Verification With Cred Def Id",
                     "attributeNames": [
                         "User Name",
                         "Feedback Score"
@@ -296,12 +289,11 @@ app.post('/api/sendkeyverification', cors(), async function (req, res) {
                     "restrictions": null
                 }
             ],
-            "predicates": [],
-            "revocationRequirement": null
+            "predicates": []
         }
     }
     console.log("send verification request, connectionId = ", connectionId, "; params = ", params);
-    const resp = await client.sendVerificationFromParameters(connectionId, params);
+    let resp = await client.sendVerificationFromParameters(connectionId, params);
     res.status(200).send();
 });
 
@@ -335,12 +327,12 @@ createTerminus(server, {
 
 const PORT = process.env.PORT || 3002;
 var server = server.listen(PORT, async function () {
-    // const url_val = await ngrok.connect(PORT);
-    // console.log("============= \n\n" + url_val + "\n\n =========");
-
+    const url_val = await ngrok.connect(PORT);
+    console.log("============= \n\n" + url_val + "\n\n =========");
+    
     var response = await client.createWebhook({
         webhookParameters: {
-            url: "https://327f8f6f.ngrok.io/webhook",  // process.env.NGROK_URL
+            url: url_val + "/webhook",  // process.env.NGROK_URL
             type: "Notification"
         }
     });
