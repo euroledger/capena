@@ -38,10 +38,30 @@ app.use(express.static(path.join(__dirname, 'build')))
 
 console.log("EBAY_CLIENT_ID = ", process.env.EBAY_CLIENT_ID);
 
-
+// "clientId": "MikeRich-EuroLedg-PRD-f193ff38b-ecdaff89",
+// "clientSecret": "PRD-193ff38bb57e-c123-43e7-ac39-b145",
+// "devid": "5ac3b11b-0734-4a47-a382-726a92d7a7aa",
+// "redirectUri": "Mike_Richardson-MikeRich-EuroLe-jkelbu",
+// "baseUrl": "api.ebay.com"
 let ebayAuthToken = new EbayAuthToken({
     filePath: './ebay-config-sample.json'
 });
+
+
+const eBay = new eBayApi({
+    appId: 'MikeRich-EuroLedg-PRD-f193ff38b-ecdaff89',
+    certId: 'PRD-193ff38bb57e-c123-43e7-ac39-b145',
+    sandbox: false,
+    siteId: eBayApi.SiteId.EBAY_GB, // see https://developer.ebay.com/DevZone/merchandising/docs/Concepts/SiteIDToGlobalID.html
+
+    // optinal parameters, should be omitted if not used
+    devId: '5ac3b11b-0734-4a47-a382-726a92d7a7aa', // required for traditional trading API
+    ruName: 'Mike_Richardson-MikeRich-EuroLe-jkelbu' // Required for authorization code grant
+    // authToken: '--  Auth\'n Auth for traditional API (used by trading) --', // can be set to use traditional API without code grant
+});
+
+// console.log("------------------- eBAY = ", eBay);
+
 
 // const clientScope = 'https://api.ebay.com/oauth/api_scope';
 
@@ -54,10 +74,12 @@ let ebayAuthToken = new EbayAuthToken({
 
 const scopes = ['https://api.ebay.com/oauth/api_scope'];
 
-app.get('/auth/ebay', async function (req, res) {
-    const authUrl = await ebayAuthToken.generateUserAuthorizationUrl('PRODUCTION', scopes);
+app.get('/auth/ebay', function (req, res) {
+    // const authUrl = await ebayAuthToken.generateUserAuthorizationUrl('PRODUCTION', scopes);
+
+    const authUrl = eBay.auth.oAuth2.generateAuthUrl();
     console.log(authUrl);
-    res.status(200).send(authUrl);
+    res.status(200).send(authUrl);y
 });
 
 app.get('/auth/privacy', cors(), function (req, res) {
@@ -67,23 +89,46 @@ app.get('/auth/privacy', cors(), function (req, res) {
 
 app.get(
     '/auth/ebay/callback',
-    (req, res) => {
+    async (req, res) => {
         // req.body.query contains the code to be used for API calls (user token)
-        console.log("got user token: ", req.query.code);
-        // res.status(200).send("got user token: ", req.body.query);
-        ebayAuthToken.exchangeCodeForAccessToken('PRODUCTION', req.query.code).then((data) => { // eslint-disable-line no-undef
-            let tok = JSON.parse(data);
-            console.log("got access token for user:", tok);
-            res.send("access token: " + tok.access_token);
-        }).catch((error) => {
+        const code = req.query.code;
+        console.log("got OAUTH user token: ", code);
+        try {
+            // res.status(200).send("got user token: ", req.body.query);
+            // ebayAuthToken.exchangeCodeForAccessToken('PRODUCTION', req.query.code).then((data) => { // eslint-disable-line no-undef
+            //     let tok = JSON.parse(data);
+            //     console.log("got access token for user:", tok);
+
+
+            //     }).then(data => {
+            //         console.log(data.results)
+            //     });
+            // exchange code for access token
+            const token = await eBay.auth.oAuth2.getToken(code);
+            eBay.auth.oAuth2.setCredentials(token);
+            console.log("access token: ", token);
+
+            const data = await eBay.trading.GetUser();
+    
+            // console.log(user.User);
+            console.log("User Name = ", data.User.UserID);
+            console.log("Feedback Score = ", data.User.FeedbackScore);
+            
+            feedbackObtained = true;         
+            userData = data.User;
+
+            res.status(200);
+        } catch (error) {
             console.log(error);
             console.log(`Error to get Access token :${JSON.stringify(error)}`);
-        });
+        }
 
     }
 );
 
+
 app.get('/', function (req, res) {
+    console.log("WOOO BACK TO THE START!")
     res.sendFile(path.join(__dirname, '/build/index.html'));
 });
 
@@ -93,6 +138,8 @@ let connected = true;
 let registered = false;
 let credentialAccepted = false;
 let verificationAccepted = false;
+let feedbackObtained = false;
+let userData = {};
 
 // console.log("EBAY STRATEGY = ", eBayStrategy);
 
@@ -169,18 +216,21 @@ app.post('/webhook', async function (req, res) {
 
 //FRONTEND ENDPOINTS
 
-
 app.post('/api/issue', cors(), async function (req, res) {
     if (connectionId) {
         console.log("issue params = ", req.body);
         var params =
         {
             credentialOfferParameters: {
-                definitionId: process.env.CRED_DEF_ID,
+                definitionId: process.env.CRED_DEF_ID_LARGE_FEEDBACK,
                 connectionId: connectionId,
                 credentialValues: {
                     "User Name": req.body["name"],
-                    "Feedback Score": req.body["score"]
+                    "Feedback Score": req.body["feedbackscore"],
+                    "Registration Date": req.body["registrationdate"],
+                    "Negative Feedback Count": req.body["negfeedbackcount"],
+                    "Positive Feedback Count": req.body["posfeedbackcount"],
+                    "Positive Feedback Percent": req.body["posfeedbackpercent"],
                 }
             }
         }
@@ -257,6 +307,12 @@ app.post('/api/connected', cors(), async function (req, res) {
     console.log("Waiting for connection...");
     await utils.until(_ => registered === true);
     res.status(200).send();
+});
+
+app.post('/api/feedback', cors(), async function (req, res) {
+    console.log("Waiting for ebay feedback...");
+    await utils.until(_ => feedbackObtained === true);
+    res.status(200).send(userData);
 });
 
 

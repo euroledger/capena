@@ -17,15 +17,18 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 // import logo from "./"; {/*add streetcred logo*/}
 
 axios.defaults.baseURL = 'https://localhost:3002/';
-axios.defaults.headers.post['Content-Type'] ='application/json;charset=utf-8';
+axios.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 export class App extends Component {
     state = {
-        name: "",
-        score: "",
-        // org: "",
-        // phone: "",
-        // email: "",
+        user: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: ""
+        },
 
         qr_open: false,
         qr_hasClosed: false,
@@ -43,7 +46,8 @@ export class App extends Component {
         firstname: '',
         lastname: '',
         email: '',
-        country: ''
+        country: '',
+        userData: {}
     };
 
     handleSubmit() {
@@ -55,16 +59,22 @@ export class App extends Component {
             this.setState({
                 qr_feedbackCollected: true,
                 loading: false,
-                name: 'Spock',
-                score: '2019'
+                user: {
+                    UserID: 'Spock',
+                    FeedbackScore: '2019'
+                }
             });
         }, 3000);
     }
-
+   
     onIssue = async () => {
         const ebayDSR = {
-            name: this.state.name,
-            score: this.state.score
+            name: this.state.user.UserID,
+            feedbackscore: this.state.user.FeedbackScore.toString(),
+            registrationdate: this.state.user.RegistrationDate,
+            negfeedbackcount: this.state.user.UniqueNegativeFeedbackCount.toString(),
+            posfeedbackcount: this.state.user.UniquePositiveFeedbackCount.toString(),
+            posfeedbackpercent: this.state.user.PositiveFeedbackPercent.toString()
         }
         this.setState({
             credential_accepted: false
@@ -183,11 +193,32 @@ export class App extends Component {
     }
 
     ebayAuth = async () => {
+        this.setState({
+            loading: true
+        });
+
         console.log("Going across to eBay!");
         const res = await axios.get('/auth/ebay');
 
-        console.log("relocate to ", res.data);
-        window.location=res.data;
+        window.location = res.data;
+
+        const user = await axios.post('/api/feedback');
+
+        console.log("User Data = ", user.data);
+
+        this.setState({
+            qr_feedbackCollected: true,
+            user: {
+                UserID: user.data.UserID,
+                FeedbackScore: user.data.FeedbackScore,
+                RegistrationDate: user.data.RegistrationDate.substring(0, 10),
+                UniqueNegativeFeedbackCount: user.data.UniqueNegativeFeedbackCount,
+                UniquePositiveFeedbackCount: user.data.UniquePositiveFeedbackCount,
+                PositiveFeedbackPercent: user.data.PositiveFeedbackPercent,
+            },
+            loading: false
+        });
+        window.stop();
     }
 
     onFeedback = () => {
@@ -318,7 +349,7 @@ export class App extends Component {
 
                 {/* The Paper */}
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <Paper style={{ display: 'flex', maxWidth: '600px', width: '100%', margin: '40px', padding: 40 }}>
+                    <Paper style={{ display: 'flex', maxWidth: '600px', width: '100%', margin: '20px', padding: 20 }}>
                         <div style={{ display: 'flex', padding: '24px 24px', flexDirection: 'column', width: '100%' }}>
                             <div style={{ display: 'flex', marginBottom: '24px' }}>
                                 <Typography variant="h5" style={{ flexGrow: 1 }}>
@@ -332,8 +363,8 @@ export class App extends Component {
                                 id="name"
                                 label="User Name"
                                 placeholder={"what's your ebay username?"}
-                                value={card.name}
-                                onChange={(e) => this.setState({ name: e.target.value })}
+                                value={card.user.UserID}
+                                // onChange={(e) => this.setState({ name: e.target.value })}
                                 style={{ marginBottom: '12px' }}
                             />
                             <Spinner active={this.state.loading}></Spinner>
@@ -341,35 +372,42 @@ export class App extends Component {
                                 id="score"
                                 label={this.getLabel()}
                                 placeholder={"what's your feedback score?"}
-                                value={card.score}
-                                onChange={(e) => this.setState({ score: e.target.value })}
+                                value={card.user.FeedbackScore}
+                                // onChange={(e) => this.setState({ score: e.target.value })}
                                 style={{ marginBottom: '12px' }}
                             />
-                            {/* <TextField  
-                              id="org"
-                              label="org"
-                              placeholder={"where do you work?"} 
-                              value={card.org}
-                              onChange={(e) => this.setState({org: e.target.value})}
-                              style={{marginBottom: '12px'}}
-                              />
-                            <TextField  
-                              id="phone"
-                              label="phone"
-                              placeholder={"what's your #?"} 
-                              value={card.phone}
-                              onChange={(e) => this.setState({phone: e.target.value})}
-                              style={{marginBottom: '12px'}}
-                              />
-                            <TextField  
-                              id="email"
-                              label="email"
-                              placeholder={"what's your email?"} 
-                              value={card.email}
-                              onChange={(e) => this.setState({email: e.target.value})}
-                              style={{marginBottom: '36px'}} 
-                              /> */}
-
+                            <TextField
+                                id="org"
+                                label="Registration Date"
+                                //   placeholder={"where do you work?"} 
+                                value={card.user.RegistrationDate}
+                                //   onChange={(e) => this.setState({org: e.target.value})}
+                                style={{ marginBottom: '12px' }}
+                            />
+                            <TextField
+                                id="nfeedcount"
+                                label="Negative Feedback Count"
+                                placeholder={"what's your #?"}
+                                value={card.user.UniqueNegativeFeedbackCount}
+                                //   onChange={(e) => this.setState({phone: e.target.value})}
+                                style={{ marginBottom: '12px' }}
+                            />
+                            <TextField
+                                id="pfeedcount"
+                                label="Postive Feedback Count"
+                                placeholder={"what's your email?"}
+                                value={card.user.UniquePositiveFeedbackCount}
+                                //   onChange={(e) => this.setState({email: e.target.value})}
+                                style={{ marginBottom: '12px' }}
+                            />
+                            <TextField
+                                id="pfeedpercent"
+                                label="Postive Feedback Percent"
+                                placeholder={"what's your email?"}
+                                value={card.user.PositiveFeedbackPercent}
+                                //   onChange={(e) => this.setState({email: e.target.value})}
+                                style={{ marginBottom: '24px' }}
+                            />
                             {this.button()}
                             {this.button2()}
                             <Dialog open={this.state.register_form_open} onClose={() => this.handleRegisterClose()} aria-labelledby="form-dialog-title">
