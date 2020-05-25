@@ -1,6 +1,11 @@
 # Feedback API Quickstart
 
-This application (demo) consists of a React front end client, and an expressjs server. The server uses third party nodejs clients to access eBay and Etsy APIs. These clients are @hendt/ebay-api and etsy-js respectively.
+This is the Capena-Delega demo application which allows users to import reputation data from eBay and Etsy (with more to follow)
+and then to have those credentials issued as digitally signed transactions on the Hyperledger Indy ledger. Users' data is then stored in their digital wallets allowing for reuse (transferrence) of those credentials to downstream verifiers.
+
+The Capena-APPIA demo will show the interaction between the users and those downstream platforms.
+
+This application, the upstream Capena-Delega Proxy Issuer, consists of a React front end client, and an expressjs server. The server uses third party nodejs clients to access eBay and Etsy APIs. These clients are @hendt/ebay-api and etsy-js respectively.
 
 The Aries SSI agent communication uses the streetcred API.
 
