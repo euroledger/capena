@@ -64,15 +64,15 @@ Assuming everything still works correctly, you are ready to run the application.
 
 - The first thing to do is register. Click on the toolbar link and fill out the form:
 
-  <img src="assets/register.png"
+  <img src="assets/registerscreen.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
         width="600"
         height="400"/>
 
-- If you're using the Streetcred Wallet, make sure your agent is configured to the Sovrin Staging network (upper-left on the home tab)
+- If you're using the Streetcred Wallet, make sure your agent is configured to the Sovrin Staging network 
 
-- Scan the QR with your mobile wallet
+- When you click "Register" a QR Code is displayed. This is the invite to connect. Scan the QR with your mobile wallet
 
     <img src="assets/qrcodeview.png"
         alt="Organizations"
@@ -84,12 +84,10 @@ This is a connection invitation. Webhooks will automatically issue you a credent
 
 - Accept the credential offer
 
-- Receive a business card! 
-
-- If you are on iOS, you can also use the Streetcred Identity Agent to connect with others and send verified email and phone number between each other
+- The User (Registration) credentials will be issued (along with an auto generated passcode)
 
 
-> Contact <support@streetcred.com> for any questions. 
+
 
 
  
