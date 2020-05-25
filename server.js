@@ -42,7 +42,6 @@ let connected = true;
 let registered = false;
 let credentialAccepted = false;
 let verificationAccepted = false;
-let feedbackObtained = false;
 
 // WEBHOOK ENDPOINT
 app.post('/webhook', async function (req, res) {

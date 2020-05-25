@@ -67,7 +67,7 @@ module.exports = (app) => {
 
         });
 
-        app.post('/api/etsy/feedback', cors(), async function (req, res) {
+        app.get('/api/etsy/feedback', cors(), async function (req, res) {
             console.log("Waiting ETSY for feedback...");
             await utils.until(_ => feedbackObtained === true);
 

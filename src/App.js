@@ -166,7 +166,6 @@ export class App extends Component {
     }
 
     getLoginLabel() {
-        console.log(">>>>>>>>>>>>>>>>> WAAAH BOLLOCKS login = ", this.state.login)
         return this.state.login ? this.state.connection_name : "Login"
     }
 
@@ -260,7 +259,7 @@ export class App extends Component {
 
     etsyGetUserData = async () => {
         console.log("Waiting for the (ETSY) feedback to arrive...");
-        const user = await axios.post('/api/etsy/feedback');
+        const user = await axios.get('/api/etsy/feedback');
 
         let count = user.data.feedback_info["count"];
         let score = user.data.feedback_info["score"];
@@ -285,8 +284,8 @@ export class App extends Component {
     }
 
     ebayGetUserData = async () => {
-        console.log("Waiting for the feedback to arrive...")
-        const user = await axios.post('/api/ebay/feedback');
+        console.log("Waiting for the feedback to arrive...");
+        const user = await axios.get('/api/ebay/feedback');
 
         console.log("User Data = ", user.data);
 

@@ -4,6 +4,9 @@ There are two express modules which allow feedback to be imported from ebay and 
 # Ebay Feedback API
 The first endpoint that is invoked is a GET call to /auth/ebay. If this is the first time the app has accessed eBay it will display a login screen in which a valid eBay user needs to be entered. For most subsequent invocations this will not be needed, although it does display this when the user access token is expired (seems to be about once per day).
 
+Note that the /auth/ebay returns a URL to the client app and the client app redirects across to that URL. Ideally that redirect would be done in Express but I was unable to get that to work due to a persistent CORS error which I couldn't fix. But a client side
+redirect seems to work ok for now.
+
 The ebay API itself will redirect successful access back the callback /auth/ebay/callback where i) the OAuth user token is exchanged for an access token, and ii) a call is made to the trading (getUser) API.
 
 Once the eBay user and password are entered it should redirect back to the main app screen. The client application needs to make a GET call to the endpoint /api/ebay/feedback to retrieve the user data.
@@ -19,6 +22,26 @@ The example app uses the following fields from those returned:
     UserID: 
 
 But there are many others that could be of use.
+
+# Etsy Feedback API
+
+The first endpoint that is invoked is a GET call to /auth/etsy. By default, unlike eBay, etsy will always display a login screen in which a valid etsy user needs to be entered. We could store this and reuse but it's not a priority right now.
+
+The etsy API itself will redirect successful access back the callback /auth/etsy/callback where i) the OAuth user token is exchanged for an access token, and ii) a call is made to the User API to get the user data. 
+
+    let user = authorisedClient.user("__SELF__");
+
+    Here __SELF__ is replaced by the Etsy user who logged in (that is done automatically by Etsy's software).
+
+Once the etsy user and password are entered it should redirect back to the main app screen. The client application needs to make a GET call to the endpoint /api/etsy/feedback to retrieve the user data.
+
+The example app uses the following fields from those returned:
+
+    UserID: 
+    FeedbackCount
+    PositiveFeedbackPercent: 
+    RegistrationDate: 
+
 
 ## Use Case
 To see how the modules are used by a front end (React) application, refer to the code in /src/App.js
@@ -80,15 +103,12 @@ Assuming everything still works correctly, you are ready to run the application.
         width="600"
         height="340"/>
 
-This is a connection invitation. Webhooks will automatically issue you a credential once this is scanned
+This is a connection invitation. Webhooks will automatically issue the User Details credential once this is scanned
 
 - Accept the credential offer
 
 - The User (Registration) credentials will be issued (along with an auto generated passcode)
 
+Once this is done, eBay and Etsy credentials can be imported and then issued to the user wallet. 
 
 
-
-
- 
-# capena-appia
