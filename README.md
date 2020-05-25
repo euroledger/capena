@@ -59,7 +59,7 @@ Assuming everything still works correctly, you are ready to run the application.
     <img src="assets/mainscreen.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
-        width="1000"
+        width="500"
         height="300"/>
 
 - If you're using the Streetcred Wallet, make sure your agent is configured to the Sovrin Staging network (upper-left on the home tab)
