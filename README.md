@@ -1,4 +1,11 @@
 # Feedback API Quickstart
+
+This application (demo) consists of a React front end client, and an expressjs server. The server uses third party nodejs clients to access eBay and Etsy APIs. These clients are @hendt/ebay-api and etsy-js respectively.
+
+The Aries SSI agent communication uses the streetcred API.
+
+# ExpressJS eBay and Etsy
+
 There are two express modules which allow feedback to be imported from ebay and etsy. These are in /routes/ebay and /routes/etsy.
 
 # Ebay Feedback API
