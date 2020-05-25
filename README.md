@@ -4,7 +4,7 @@ There are two express modules which allow feedback to be imported from ebay and 
 To run the client app (for ebay) it is necessary to install and run the ngrok tunneling software so that webhook calls get routed correctly through to https://localhost:3002 (the express server port).
 
 
-# Install and ngrok
+# Install and run ngrok
 https://ngrok.com/download
 
 Once installed run it with the command
@@ -15,18 +15,9 @@ You will see something like
 
     Forwarding   https://650020e4.ngrok.io -> https://localhost:3002 
 
-Copy the https url (https://650020e4.ngrok.io) and add to the code in server.js
-
-For example
-
-In the line of code with webhook parameters in: change the URL to match that of the above 
-
-    var response = await client.createWebhook({
-        webhookParameters: {
-            url: "https://650020e4.ngrok.io/webhook",  
-            type: "Notification"
-        }
-    });
+In the .env file change the NGROK key as follows:
+    
+    NGROK_URL='https://8049c8b1.ngrok.io'
 
 # https SSL certificates
 

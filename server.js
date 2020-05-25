@@ -299,9 +299,11 @@ var server = server.listen(PORT, async function () {
     // const url_val = await ngrok.connect(PORT);
     // console.log("============= \n\n" + url_val + "\n\n =========");
 
+    const url_val = process.env.NGROK_URL + "/webhook";
+    console.log("Using ngrok (webhook) url of ", url_val);
     var response = await client.createWebhook({
         webhookParameters: {
-            url: "https://650020e4.ngrok.io/webhook",  // process.env.NGROK_URL
+            url: url_val,  // process.env.NGROK_URL
             type: "Notification"
         }
     });
