@@ -41,17 +41,13 @@ module.exports = (app) => {
         async (req, res) => {
             // req.body.query contains the code to be used for API calls (user token)
             const code = req.query.code;
-            console.log("got OAUTH user token: ", code);
             try {
                 // exchange code for access token
                 const token = await eBay.auth.oAuth2.getToken(code);
                 eBay.auth.oAuth2.setCredentials(token);
-                console.log("access token: ", token);
 
                 const data = await eBay.trading.GetUser();
-
-                console.log("User Name = ", data.User.UserID);
-                console.log("Feedback Score = ", data.User.FeedbackScore);
+                console.log(data);
 
                 feedbackObtained = true;
                 ebayUserData = data.User;
@@ -65,7 +61,7 @@ module.exports = (app) => {
         }
     );
 
-    app.post('/api/ebay/feedback', cors(), async function (req, res) {
+    app.get('/api/ebay/feedback', cors(), async function (req, res) {
         console.log("Waiting for EBAY feedback...");
         await utils.until(_ => feedbackObtained === true);
         res.status(200).send(ebayUserData);

@@ -1,6 +1,25 @@
 # Feedback API Quickstart
 There are two express modules which allow feedback to be imported from ebay and etsy. These are in /routes/ebay and /routes/etsy
 
+# Ebay Feedback API
+The first endpoint that is invoked is a GET call to /auth/ebay. If this is the first time the app has accessed eBay it will display a login screen in which a valid eBay user needs to be entered. For most subsequent invocations this will not be needed, although it does display this when the user access token is expired (seems to be about once per day).
+
+The ebay API itself will redirect successful access back the callback /auth/ebay/callback where i) the OAuth user token is exchanged for an access token, and ii) a call is made to the trading (getUser) API.
+
+Once the eBay user and password are entered it should redirect back to the main app screen. The client application needs to make a GET call to the endpoint /api/ebay/feedback to retrieve the user data.
+
+The example app uses the following fields from those returned:
+
+    FeedbackScore
+    UniqueNegativeFeedbackCount: 
+    UniquePositiveFeedbackCount: 
+    PositiveFeedbackPercent: 
+    FeedbackPrivate: 
+    RegistrationDate: 
+    UserID: 
+
+But there are many others that could be of use.
+
 ## Use Case
 To see how the modules are used by a front end (React) application, refer to the code in /src/App.js
 
@@ -37,7 +56,7 @@ Assuming everything still works correctly, you are ready to run the application.
 
 - On the web app, fill in the details and click issue credential
 
-    <img src="assets/credentialview.png"
+    <img src="assets/mainscreen.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
         width="1000"
