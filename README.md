@@ -54,13 +54,21 @@ Assuming everything still works correctly, you are ready to run the application.
 - Run with npm
 `npm run start`
 
-- On the web app, fill in the details and click issue credential
+- The main screen will be displayed:
 
     <img src="assets/mainscreen.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
-        width="500"
-        height="300"/>
+        width="600"
+        height="400"/>
+
+- The first thing to do is register. Click on the toolbar link and fill out the form:
+
+  <img src="assets/register.png"
+        alt="Organizations"
+        style="padding-top: 20px; padding-bottom: 20px" 
+        width="600"
+        height="400"/>
 
 - If you're using the Streetcred Wallet, make sure your agent is configured to the Sovrin Staging network (upper-left on the home tab)
 
