@@ -1,5 +1,45 @@
 # Feedback API Quickstart
-There are two express modules which allow feedback to be imported from ebay and etsy. These are in /routes/ebay and /routes/etsy
+There are two express modules which allow feedback to be imported from ebay and etsy. These are in /routes/ebay and /routes/etsy.
+
+To run the client app (for ebay) it is necessary to install and run the ngrok tunneling software so that webhook calls get routed correctly through to https://localhost:3002 (the express server port).
+
+
+# Install and ngrok
+https://ngrok.com/download
+
+Once installed run it with the command
+
+./ngrok http https://localhost:3002
+
+You will see something like
+
+    Forwarding   https://650020e4.ngrok.io -> https://localhost:3002 
+
+Copy the https url (https://650020e4.ngrok.io) and add to the code in server.js
+
+For example
+
+In the line of code with webhook parameters in: change the URL to match that of the above 
+
+    var response = await client.createWebhook({
+        webhookParameters: {
+            url: "https://650020e4.ngrok.io/webhook",  
+            type: "Notification"
+        }
+    });
+
+# https SSL certificates
+
+Either install and set linux to trust new SSL certificates and place in certs. There will need to be two
+    server.crt
+    server.key
+
+As an alternative, in Chrome you can disable certificate authorization (fine for dev only). Go to
+
+    chrome://flags/#allow-insecure-localhost
+
+...and set "Allow invalid certificates for resources loaded from localhost" to DISABLED.
+
 
 # Ebay Feedback API
 The first endpoint that is invoked is a GET call to /auth/ebay. If this is the first time the app has accessed eBay it will display a login screen in which a valid eBay user needs to be entered. For most subsequent invocations this will not be needed, although it does display this when the user access token is expired (seems to be about once per day).
