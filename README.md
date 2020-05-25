@@ -67,17 +67,17 @@ Assuming everything still works correctly, you are ready to run the application.
   <img src="assets/registerscreen.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
-        width="600"
+        width="700"
         height="400"/>
 
 - If you're using the Streetcred Wallet, make sure your agent is configured to the Sovrin Staging network 
 
 - When you click "Register" a QR Code is displayed. This is the invite to connect. Scan the QR with your mobile wallet
 
-    <img src="assets/qrcodeview.png"
+    <img src="assets/qrcode.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
-        width="400"
+        width="600"
         height="340"/>
 
 This is a connection invitation. Webhooks will automatically issue you a credential once this is scanned
