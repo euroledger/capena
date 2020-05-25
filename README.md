@@ -40,7 +40,7 @@ redirect seems to work ok for now.
 
 The ebay API itself will redirect successful access back the callback /auth/ebay/callback where i) the OAuth user token is exchanged for an access token, and ii) a call is made to the trading (getUser) API.
 
-Once the eBay user and password are entered it should redirect back to the main app screen. The client application needs to make a GET call to the endpoint /api/ebay/feedback to retrieve the user data.
+Once the eBay user data is retrieved successfully it should redirect back to the main app screen. The client application needs to make a GET call to the endpoint /api/ebay/feedback to retrieve the user data.
 
 The example app uses the following fields from those returned:
 
@@ -73,6 +73,9 @@ The example app uses the following fields from those returned:
     PositiveFeedbackPercent: 
     RegistrationDate: 
 
+# utils Until() function
+
+Both Etsy and Ebay use the utils.until() function to avoid race conditions. This is just a function that polls for a certain boolean expression to be satisfied before it releases the programme flow back to the caller via a resolved promise.
 
 ## Use Case
 To see how the modules are used by a front end (React) application, refer to the code in /src/App.js
