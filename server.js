@@ -7,21 +7,14 @@ const express = require('express');
 const ngrok = require('ngrok');
 const cache = require('./model');
 const utils = require('./utils');
-const EbayAuthToken = require('ebay-oauth-nodejs-client');
-const eBayApi = require('@hendt/ebay-api');
+
 
 var fs = require('fs');
 var https = require('https');
-var proxy = require('express-http-proxy');
-
-//fix ssl localhost
-// process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-
 
 require('dotenv').config();
-
 const { AgencyServiceClient, Credentials } = require("@streetcred.id/service-clients");
+
 console.log("ACCESSTOK = ", process.env.ACCESSTOK);
 const client = new AgencyServiceClient(new Credentials(process.env.ACCESSTOK, process.env.SUBKEY));
 
@@ -35,100 +28,11 @@ app.use(cors());
 app.use(parser.json());
 app.use(express.static(path.join(__dirname, 'build')))
 
+// add in routes from the two platforms eBay and Etsy
+require('./routes/ebay')(app);
+require('./routes/etsy')(app);
 
-console.log("EBAY_CLIENT_ID = ", process.env.EBAY_CLIENT_ID);
-
-// "clientId": "MikeRich-EuroLedg-PRD-f193ff38b-ecdaff89",
-// "clientSecret": "PRD-193ff38bb57e-c123-43e7-ac39-b145",
-// "devid": "5ac3b11b-0734-4a47-a382-726a92d7a7aa",
-// "redirectUri": "Mike_Richardson-MikeRich-EuroLe-jkelbu",
-// "baseUrl": "api.ebay.com"
-let ebayAuthToken = new EbayAuthToken({
-    filePath: './ebay-config-sample.json'
-});
-
-
-const eBay = new eBayApi({
-    appId: 'MikeRich-EuroLedg-PRD-f193ff38b-ecdaff89',
-    certId: 'PRD-193ff38bb57e-c123-43e7-ac39-b145',
-    sandbox: false,
-    siteId: eBayApi.SiteId.EBAY_GB, // see https://developer.ebay.com/DevZone/merchandising/docs/Concepts/SiteIDToGlobalID.html
-
-    // optinal parameters, should be omitted if not used
-    devId: '5ac3b11b-0734-4a47-a382-726a92d7a7aa', // required for traditional trading API
-    ruName: 'Mike_Richardson-MikeRich-EuroLe-jkelbu' // Required for authorization code grant
-    // authToken: '--  Auth\'n Auth for traditional API (used by trading) --', // can be set to use traditional API without code grant
-});
-
-// console.log("------------------- eBAY = ", eBay);
-
-
-// const clientScope = 'https://api.ebay.com/oauth/api_scope';
-
-// // Client Crendential Auth Flow
-// ebayAuthToken.getApplicationToken('PRODUCTION', clientScope).then((data) => {
-//     console.log(data);
-// }).catch((error) => {
-//     console.log(`Error to get Access token :${JSON.stringify(error)}`);
-// });
-
-const scopes = ['https://api.ebay.com/oauth/api_scope'];
-
-app.get('/auth/ebay', function (req, res) {
-    // const authUrl = await ebayAuthToken.generateUserAuthorizationUrl('PRODUCTION', scopes);
-
-    const authUrl = eBay.auth.oAuth2.generateAuthUrl();
-    console.log(authUrl);
-    res.status(200).send(authUrl);y
-});
-
-app.get('/auth/privacy', cors(), function (req, res) {
-    res.send("You are ok with us!");
-});
-
-
-app.get(
-    '/auth/ebay/callback',
-    async (req, res) => {
-        // req.body.query contains the code to be used for API calls (user token)
-        const code = req.query.code;
-        console.log("got OAUTH user token: ", code);
-        try {
-            // res.status(200).send("got user token: ", req.body.query);
-            // ebayAuthToken.exchangeCodeForAccessToken('PRODUCTION', req.query.code).then((data) => { // eslint-disable-line no-undef
-            //     let tok = JSON.parse(data);
-            //     console.log("got access token for user:", tok);
-
-
-            //     }).then(data => {
-            //         console.log(data.results)
-            //     });
-            // exchange code for access token
-            const token = await eBay.auth.oAuth2.getToken(code);
-            eBay.auth.oAuth2.setCredentials(token);
-            console.log("access token: ", token);
-
-            const data = await eBay.trading.GetUser();
-    
-            // console.log(user.User);
-            console.log("User Name = ", data.User.UserID);
-            console.log("Feedback Score = ", data.User.FeedbackScore);
-            
-            feedbackObtained = true;         
-            userData = data.User;
-
-            res.status(200);
-        } catch (error) {
-            console.log(error);
-            console.log(`Error to get Access token :${JSON.stringify(error)}`);
-        }
-
-    }
-);
-
-
-app.get('/', function (req, res) {
-    console.log("WOOO BACK TO THE START!")
+app.get('*', function (req, res) {
     res.sendFile(path.join(__dirname, '/build/index.html'));
 });
 
@@ -139,27 +43,6 @@ let registered = false;
 let credentialAccepted = false;
 let verificationAccepted = false;
 let feedbackObtained = false;
-let userData = {};
-
-// console.log("EBAY STRATEGY = ", eBayStrategy);
-
-
-// EBAY AUTHENTICATION
-// passport.use(new eBayStrategy({
-//     clientID: process.env.EBAY_CLIENT_ID,
-//     clientSecret: process.env.EBAY_CLIENT_SECRET,
-//     ruName: 'Mike_Richardson-MikeRich-EuroLe-jkelbu'
-// },
-//     (accessToken) => {
-//         console.log(accessToken);
-//     }
-//     //   function(accessToken, refreshToken, cb) {
-//     //     // Do whatever you need with credentials. A request call to eBay api to fetch user perhaps?
-//     //     cb();
-//     //   }
-// ));
-
-
 
 // WEBHOOK ENDPOINT
 app.post('/webhook', async function (req, res) {
@@ -182,7 +65,8 @@ app.post('/webhook', async function (req, res) {
                         'First Name': param_obj["firstname"],
                         'Last Name': param_obj["lastname"],
                         'Email Address': param_obj["email"],
-                        'Country': param_obj["country"]
+                        'Country': param_obj["country"],
+                        'Passcode': param_obj["passcode"]
                     }
                 }
             }
@@ -217,12 +101,13 @@ app.post('/webhook', async function (req, res) {
 //FRONTEND ENDPOINTS
 
 app.post('/api/issue', cors(), async function (req, res) {
+    console.log("IN /api/issue");
     if (connectionId) {
         console.log("issue params = ", req.body);
         var params =
         {
             credentialOfferParameters: {
-                definitionId: process.env.CRED_DEF_ID_LARGE_FEEDBACK,
+                definitionId: process.env.CRED_DEF_ID_EBAY,
                 connectionId: connectionId,
                 credentialValues: {
                     "User Name": req.body["name"],
@@ -230,6 +115,31 @@ app.post('/api/issue', cors(), async function (req, res) {
                     "Registration Date": req.body["registrationdate"],
                     "Negative Feedback Count": req.body["negfeedbackcount"],
                     "Positive Feedback Count": req.body["posfeedbackcount"],
+                    "Positive Feedback Percent": req.body["posfeedbackpercent"],
+                }
+            }
+        }
+        await client.createCredential(params);
+        console.log("----------------------> CREDENTIAL CREATED!");
+        res.status(200).send();
+    } else {
+        res.status(500).send("Not connected");
+    }
+});
+
+app.post('/api/etsy/issue', cors(), async function (req, res) {
+    console.log("IN /api/etsy/issue");
+    if (connectionId) {
+        console.log("issue params = ", req.body);
+        var params =
+        {
+            credentialOfferParameters: {
+                definitionId: process.env.CRED_DEF_ID_ETSY,
+                connectionId: connectionId,
+                credentialValues: {
+                    "User Name": req.body["name"],
+                    "Feedback Count": req.body["feedbackcount"],
+                    "Registration Date": req.body["registrationdate"],
                     "Positive Feedback Percent": req.body["posfeedbackpercent"],
                 }
             }
@@ -266,7 +176,7 @@ async function getConnectionWithTimeout(connectionId) {
 
 app.post('/api/login', cors(), async function (req, res) {
     console.log("Retrieving connection record for id ", req.body);
-    connectionId = req.body.email;
+    connectionId = req.body.passcode;
 
     // verify that the connection record exists for this id
     let connectionContract;
@@ -279,7 +189,7 @@ app.post('/api/login', cors(), async function (req, res) {
 
     if (connectionContract) {
         console.log("connectionContract = ", connectionContract);
-        res.status(200).send("OK!");
+        res.status(200).send(connectionContract);
     } else {
         console.log("connection record not found for id ", connectionId);
         res.status(500);
@@ -289,7 +199,7 @@ app.post('/api/login', cors(), async function (req, res) {
 
 app.post('/api/register', cors(), async function (req, res) {
     console.log("Getting invite...")
-    const invite = await getInvite(req.body.email);
+    const invite = await getInvite(req.body.passcode);
     const attribs = JSON.stringify(req.body);
     console.log("invite= ", invite);
     cache.add(invite.connectionId, attribs);
@@ -309,11 +219,7 @@ app.post('/api/connected', cors(), async function (req, res) {
     res.status(200).send();
 });
 
-app.post('/api/feedback', cors(), async function (req, res) {
-    console.log("Waiting for ebay feedback...");
-    await utils.until(_ => feedbackObtained === true);
-    res.status(200).send(userData);
-});
+
 
 
 app.post('/api/credential_accepted', cors(), async function (req, res) {
@@ -396,7 +302,7 @@ var server = server.listen(PORT, async function () {
 
     var response = await client.createWebhook({
         webhookParameters: {
-            url: "https://327f8f6f.ngrok.io/webhook",  // process.env.NGROK_URL
+            url: "https://650020e4.ngrok.io/webhook",  // process.env.NGROK_URL
             type: "Notification"
         }
     });
@@ -404,20 +310,3 @@ var server = server.listen(PORT, async function () {
     cache.add("webhookId", response.id);
     console.log('Listening on port %d', server.address().port);
 });
-
-
-// app.listen(3000, async () => {
-//     const url_val = await ngrok.connect(3002);
-//     console.log("============= \n\n" + url_val + "\n\n =========");
-//     var response = await client.createWebhook({
-//         webhookParameters: {
-//             url: url_val + "/webhook",  // process.env.NGROK_URL
-//             type: "Notification"
-//         }
-//     });
-
-//     //     cache.add("webhookId", response.id);
-//     console.log(`Server `run`ning on port 3000 ...`);
-// });
-
-// "proxy": "http://localhost:3002"
