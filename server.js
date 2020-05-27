@@ -29,12 +29,14 @@ app.use(parser.json());
 app.use(express.static(path.join(__dirname, 'build')))
 
 // add in routes from the two platforms eBay and Etsy
-require('./routes/ebay')(app);
+require('./routes/ebay')(app)
 require('./routes/etsy')(app);
 
-app.get('*', function (req, res) {
+app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname, '/build/index.html'));
 });
+
+
 
 let credentialId;
 let connectionId;
@@ -50,6 +52,15 @@ app.post('/webhook', async function (req, res) {
         if (req.body.message_type === 'new_connection') {
             registered = true;
             connectionId = req.body.object_id;
+
+            // if we want the name of the connection for registration id front end...do here
+            // console.log("---------------> new connection: ", req.body);
+            // try {
+            //     connectionContract = await getConnectionWithTimeout(connectionId);
+            // } catch (e) {
+            //     console.log(e.message || e.toString());
+            //     return
+            // }
             console.log("new connection notif, connectionId = ", connectionId);
 
             const attribs = cache.get(req.body.object_id);
@@ -195,9 +206,9 @@ app.post('/api/login', cors(), async function (req, res) {
     }
 });
 
-
 app.post('/api/register', cors(), async function (req, res) {
     console.log("Getting invite...")
+    console.log("Invite params = ", req.body);
     const invite = await getInvite(req.body.passcode);
     const attribs = JSON.stringify(req.body);
     console.log("invite= ", invite);
@@ -274,6 +285,7 @@ const getInvite = async (id) => {
                 multiParty: false
             }
         });
+        console.log(">>>>>>>>>>>> INVITE = ", result);
         return result;
     } catch (e) {
         console.log(e.message || e.toString());

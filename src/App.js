@@ -166,6 +166,7 @@ export class App extends Component {
     }
 
     getLoginLabel() {
+        console.log("WOOGIE login = ", this.state.login);
         return this.state.login ? this.state.connection_name : "Login"
     }
 
@@ -226,11 +227,15 @@ export class App extends Component {
         }));
 
         await axios.post('/api/credential_accepted', null);
+        console.log("setting login to true");
+       
         this.setState(prevState => ({
             qr_open: false,
+            login: true,
             ebay: { ...prevState.ebay, credential_accepted: true },
             etsy: { ...prevState.etsy, credential_accepted: true }
         }));
+        this.setState({login: true});
     }
 
     register = () => {
@@ -309,7 +314,14 @@ export class App extends Component {
     }
     etsyAuth = async () => {
         console.log("Going across to Etsy!...");
-        const res = await axios.get('/auth/etsy');
+        let res;
+        try {
+            res = await axios.get('/auth/etsy');
+            // res = await axios.get('/mike');
+        } catch (e) {
+            console.log(">>>>>>>>>>>>>> CLOBBER e = ", e);
+        }
+
         sessionStorage.setItem("waitingForEtsyUserData", "true");
         window.location = res.data;
         this.etsyGetUserData();
@@ -472,12 +484,15 @@ export class App extends Component {
 
     componentDidMount() {
         console.log(">>>>>>>>>>>>>>>>>>>>>> componentDidMount: set connection_name to ", sessionStorage.getItem("name"))
-        this.setState({connection_name: sessionStorage.getItem("name")})
-       
+        this.setState({ connection_name: sessionStorage.getItem("name") })
 
-        const l =  sessionStorage.getItem("login") === "true" ? true : false;
-        console.log(">>>>>>>>>>>>>>>>>>>>>> componentDidMount: set login to ",l);
-        this.setState({login: l})
+
+        const l = sessionStorage.getItem("login") === "true" ? true : false;
+
+        if (l) {
+            console.log(">>>>>>>>>>>>>>>>>>>>>> componentDidMount: set login to ", l);
+            this.setState({ login: true })
+        }
     }
 
     render() {

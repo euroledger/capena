@@ -26,12 +26,12 @@ Once the eBay user data is retrieved successfully it should redirect back to the
 The example app uses the following fields from those returned:
 
     FeedbackScore
-    UniqueNegativeFeedbackCount: 
-    UniquePositiveFeedbackCount: 
-    PositiveFeedbackPercent: 
-    FeedbackPrivate: 
-    RegistrationDate: 
-    UserID: 
+    UniqueNegativeFeedbackCount
+    UniquePositiveFeedbackCount 
+    PositiveFeedbackPercent
+    FeedbackPrivate
+    RegistrationDate 
+    UserID
 
 But there are many others that could be of use.
 
@@ -48,10 +48,10 @@ Once the etsy user and password are entered it should redirect back to the main 
 
 The example app uses the following fields from those returned:
 
-    UserID: 
+    UserID
     FeedbackCount
-    PositiveFeedbackPercent: 
-    RegistrationDate: 
+    PositiveFeedbackPercent 
+    RegistrationDate
 
 # utils Until() function
 
@@ -108,7 +108,7 @@ To see how the modules are used by a front end (React) application, refer to the
  `git clone https://github.com/euroledger/capena-delega.git`
  
  1. navigate into the directory
- `cd iiw-demo`
+ `cd capena-delega`
  
  1. install the dependencies
  `npm install .`

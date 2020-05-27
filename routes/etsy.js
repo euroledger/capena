@@ -20,6 +20,7 @@ module.exports = (app) => {
 
     app.get('/auth/etsy', function (req, res) {
 
+        console.log(">>>> feedbackObtained = ", feedbackObtained);
         if (feedbackObtained) {
             res.status(200); // no point going across to etsy if already got the credentials
         }
@@ -45,6 +46,9 @@ module.exports = (app) => {
         console.log("query = ", query);
         console.log("verifier = ", verifier);
 
+        if (userData.body) {
+            res.redirect("http://localhost:3000/");
+        }
         // final part of OAuth dance, request access token and secret with given verifier
         let ret = etsyclient.accessToken(etsyToken, etsySecret, verifier, function (err, response) {
             // update our session with OAuth token and secret
