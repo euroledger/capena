@@ -36,33 +36,35 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname, '/build/index.html'));
 });
 
-
-
 let credentialId;
 let connectionId;
 let connected = true;
 let registered = false;
 let credentialAccepted = false;
 let verificationAccepted = false;
+let name='';
 
 // WEBHOOK ENDPOINT
 app.post('/webhook', async function (req, res) {
     try {
         console.log("got webhook" + req + "   type: " + req.body.message_type);
         if (req.body.message_type === 'new_connection') {
-            registered = true;
+          
             connectionId = req.body.object_id;
 
             // if we want the name of the connection for registration id front end...do here
-            // console.log("---------------> new connection: ", req.body);
-            // try {
-            //     connectionContract = await getConnectionWithTimeout(connectionId);
-            // } catch (e) {
-            //     console.log(e.message || e.toString());
-            //     return
-            // }
-            console.log("new connection notif, connectionId = ", connectionId);
 
+            console.log("new connection notif, connection = ", req.body);
+            try {
+                connectionContract = await getConnectionWithTimeout(connectionId);
+                console.log("--------------->NEW CONNECTION: ", connectionContract);
+                name = connectionContract.name;
+            } catch (e) {
+                console.log(e.message || e.toString());
+                return
+            }
+            registered = true;
+            
             const attribs = cache.get(req.body.object_id);
             console.log("attribs from cache = ", attribs);
             var param_obj = JSON.parse(attribs);
@@ -226,10 +228,8 @@ app.post('/api/revoke', cors(), async function (req, res) {
 app.post('/api/connected', cors(), async function (req, res) {
     console.log("Waiting for connection...");
     await utils.until(_ => registered === true);
-    res.status(200).send();
+    res.status(200).send(name);
 });
-
-
 
 
 app.post('/api/credential_accepted', cors(), async function (req, res) {
@@ -311,15 +311,20 @@ var server = server.listen(PORT, async function () {
     // const url_val = await ngrok.connect(PORT);
     // console.log("============= \n\n" + url_val + "\n\n =========");
 
-    const url_val = process.env.NGROK_URL + "/webhook";
-    console.log("Using ngrok (webhook) url of ", url_val);
-    var response = await client.createWebhook({
-        webhookParameters: {
-            url: url_val,  // process.env.NGROK_URL
-            type: "Notification"
-        }
-    });
-
+    try {
+        const url_val = process.env.NGROK_URL + "/webhook";
+        console.log("Using ngrok (webhook) url of ", url_val);
+        var response = await client.createWebhook({
+            webhookParameters: {
+                url: url_val,  // process.env.NGROK_URL
+                type: "Notification"
+            }
+        });
+    }
+    catch (e) {
+        console.log(e);
+    }
+   
     cache.add("webhookId", response.id);
     console.log('Listening on port %d', server.address().port);
 });

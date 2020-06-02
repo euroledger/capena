@@ -19,12 +19,9 @@ import CloseIcon from '@material-ui/icons/Close';
 import Alert from '@material-ui/lab/Alert';
 import IconButton from '@material-ui/core/IconButton';
 
-// import logo from "./"; {/*add streetcred logo*/}
-
 axios.defaults.baseURL = 'https://localhost:3002/';
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
-
 
 export class App extends Component {
     state = {
@@ -218,24 +215,26 @@ export class App extends Component {
         console.log(response);
         this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
 
-        await axios.post('/api/connected', null);
-
+        const resp = await axios.post('/api/connected', null);
         this.setState(prevState => ({
+            login: true,
+            connection_name: resp.data,
             qr_open: false,
             ebay: { ...prevState.ebay, credential_accepted: false },
             etsy: { ...prevState.etsy, credential_accepted: false }
         }));
-
+        sessionStorage.setItem("name", this.state.connection_name);
+        sessionStorage.setItem("login", true);
         await axios.post('/api/credential_accepted', null);
         console.log("setting login to true");
-       
+
         this.setState(prevState => ({
             qr_open: false,
             login: true,
             ebay: { ...prevState.ebay, credential_accepted: true },
             etsy: { ...prevState.etsy, credential_accepted: true }
         }));
-        this.setState({login: true});
+        this.setState({ login: true });
     }
 
     register = () => {
@@ -286,6 +285,7 @@ export class App extends Component {
             }
         }));
         sessionStorage.setItem("waitingForEtsyUserData", "false");
+        sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
     }
 
     ebayGetUserData = async () => {
@@ -311,6 +311,7 @@ export class App extends Component {
 
         window.stop();
         sessionStorage.setItem("waitingForEbayUserData", "false");
+        sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
     }
     etsyAuth = async () => {
         console.log("Going across to Etsy!...");
@@ -425,6 +426,12 @@ export class App extends Component {
 
     }
 
+    ebaybutton() {
+        return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled("ebay")}
+            onClick={() => this.onVerify()}>
+            {this.getAcceptedLabelVerify("ebay")}
+        </Button>)
+    }
     button2(platform) {
         return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled(platform)}
             onClick={() => this.onEtsyVerify()}>
@@ -482,17 +489,50 @@ export class App extends Component {
         this.postLogin();
     }
 
-    componentDidMount() {
-        console.log(">>>>>>>>>>>>>>>>>>>>>> componentDidMount: set connection_name to ", sessionStorage.getItem("name"))
+    reloadLoginDetails() {
         this.setState({ connection_name: sessionStorage.getItem("name") })
-
-
         const l = sessionStorage.getItem("login") === "true" ? true : false;
-
         if (l) {
             console.log(">>>>>>>>>>>>>>>>>>>>>> componentDidMount: set login to ", l);
             this.setState({ login: true })
         }
+    }
+
+    reloadEtsyUserDetails() {
+        const etsy = JSON.parse(sessionStorage.getItem("etsyUserData"));
+        console.log("ETSY = ", etsy);
+        if (etsy) {
+            this.setState(prevState => ({
+                etsyuser: { ...prevState.etsy, ...etsy },
+                etsy: {
+                    credential_accepted: true, 
+                    has_been_revoked: true,
+                    qr_feedbackCollected: true
+                }
+            }));
+        }
+    }
+
+    reloadEbayUserDetails() {
+        const ebay = JSON.parse(sessionStorage.getItem("ebayUserData"));
+        console.log("EBAY = ", ebay);
+        if (ebay) {
+            this.setState(prevState => ({
+                user: { ...prevState.ebay, ...ebay },
+                ebay: {
+                    credential_accepted: true, 
+                    has_been_revoked: true,
+                    loading: false,
+                    qr_feedbackCollected: true
+                }
+            }));
+        }
+    }
+
+    componentDidMount() {
+        this.reloadLoginDetails();
+        this.reloadEtsyUserDetails();
+        this.reloadEbayUserDetails();
     }
 
     render() {
@@ -585,7 +625,7 @@ export class App extends Component {
                                     style={{ marginBottom: '24px' }}
                                 />
                                 {this.button()}
-                                {this.button2("ebay")}
+                                {/* {this.ebaybutton()} */}
                                 <Dialog open={this.state.register_form_open} onClose={() => this.handleRegisterClose()} aria-labelledby="form-dialog-title">
                                     <DialogTitle id="form-dialog-title">Register</DialogTitle>
                                     <DialogContent>
@@ -745,7 +785,7 @@ export class App extends Component {
 
 
                                 {this.etsybutton()}
-                                {this.button2("etsy")}
+                                {/* {this.button2("etsy")} */}
 
 
                                 <Dialog open={this.state.register_form_open} onClose={() => this.handleRegisterClose()} aria-labelledby="form-dialog-title">

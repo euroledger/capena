@@ -21,8 +21,9 @@ module.exports = (app) => {
     app.get('/auth/etsy', function (req, res) {
 
         console.log(">>>> feedbackObtained = ", feedbackObtained);
-        if (feedbackObtained) {
+        if (feedbackObtained === true) {
             res.status(200); // no point going across to etsy if already got the credentials
+            return;
         }
         console.log("Get URL for ETSY sign-in");
 
