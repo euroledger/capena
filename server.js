@@ -36,26 +36,26 @@ app.get('/', function (req, res) {
     res.sendFile(path.join(__dirname, '/build/index.html'));
 });
 
-let credentialId;
+let ebayCredentialId;
+let etsyCredentialId
 let connectionId;
-let connected = true;
 let registered = false;
 let credentialAccepted = false;
 let verificationAccepted = false;
-let name='';
+let platform;
+let name = '';
 
 // WEBHOOK ENDPOINT
 app.post('/webhook', async function (req, res) {
     try {
         console.log("got webhook" + req + "   type: " + req.body.message_type);
         if (req.body.message_type === 'new_connection') {
-          
-            connectionId = req.body.object_id;
 
-            // if we want the name of the connection for registration id front end...do here
+            connectionId = req.body.object_id;
 
             console.log("new connection notif, connection = ", req.body);
             try {
+                // use the connection contract to get the name for the front end to use
                 connectionContract = await getConnectionWithTimeout(connectionId);
                 console.log("--------------->NEW CONNECTION: ", connectionContract);
                 name = connectionContract.name;
@@ -64,7 +64,7 @@ app.post('/webhook', async function (req, res) {
                 return
             }
             registered = true;
-            
+
             const attribs = cache.get(req.body.object_id);
             console.log("attribs from cache = ", attribs);
             var param_obj = JSON.parse(attribs);
@@ -89,9 +89,15 @@ app.post('/webhook', async function (req, res) {
         else if (req.body.message_type === 'credential_request') {
             console.log("cred request notif");
             // if (connected) {
-            credentialId = req.body.object_id;
-            console.log("Issuing credential to ledger, id = ", credentialId);
-            await client.issueCredential(credentialId);
+            if (platform === "ebay") {
+                ebayCredentialId = req.body.object_id;
+                console.log("Issuing credential to ledger, id = ", ebayCredentialId);
+                await client.issueCredential(ebayCredentialId);
+            } else {
+                etsyCredentialId = req.body.object_id;
+                console.log("Issuing credential to ledger, id = ", etsyCredentialId);
+                await client.issueCredential(etsyCredentialId);
+            }
             console.log("Credential Issue -> DONE");
             credentialAccepted = true;
             // }
@@ -113,15 +119,17 @@ app.post('/webhook', async function (req, res) {
 //FRONTEND ENDPOINTS
 
 app.post('/api/issue', cors(), async function (req, res) {
+    platform = "ebay";
     console.log("IN /api/issue");
     if (connectionId) {
-        console.log("issue params = ", req.body);
+        console.log("issue credential with connection id " + connectionId + " params = ", req.body);
         var params =
         {
             credentialOfferParameters: {
                 definitionId: process.env.CRED_DEF_ID_EBAY,
                 connectionId: connectionId,
                 credentialValues: {
+                    "Platform": "ebay",
                     "User Name": req.body["name"],
                     "Feedback Score": req.body["feedbackscore"],
                     "Registration Date": req.body["registrationdate"],
@@ -141,14 +149,16 @@ app.post('/api/issue', cors(), async function (req, res) {
 
 app.post('/api/etsy/issue', cors(), async function (req, res) {
     console.log("IN /api/etsy/issue");
+    platform = "etsy";
     if (connectionId) {
-        console.log("issue params = ", req.body);
+        console.log("issue credential with connection id " + connectionId + " params = ", req.body);
         var params =
         {
             credentialOfferParameters: {
                 definitionId: process.env.CRED_DEF_ID_ETSY,
                 connectionId: connectionId,
                 credentialValues: {
+                    "Platform": "etsy",
                     "User Name": req.body["name"],
                     "Feedback Count": req.body["feedbackcount"],
                     "Registration Date": req.body["registrationdate"],
@@ -201,7 +211,31 @@ app.post('/api/login', cors(), async function (req, res) {
 
     if (connectionContract) {
         console.log("connectionContract = ", connectionContract);
-        res.status(200).send(connectionContract);
+
+        console.log("---------------- GET ALL CREDENTIALS -------------------");
+
+        // retreive all credentials for this id
+        let credentials = await client.listCredentials();
+
+        var issuedCredentialsForThisUser = credentials.filter(function (credential) {
+            return credential.state === "Issued" && credential.connectionId === connectionId;
+        });
+
+        console.log(issuedCredentialsForThisUser);
+
+        const connectionAndCredentials = {
+            connectionContract: connectionContract,
+            credentials: issuedCredentialsForThisUser
+        }
+        // save the credential IDs of previously issued credentials -> these can be used for revocation
+        issuedCredentialsForThisUser.forEach(credential => {
+            if (credential.values.Platform === "etsy") {
+                etsyCredentialId = credential.credentialId;
+            } else if (credential.values.Platform === "ebay") {
+                ebayCredentialId = credential.credentialId;
+            }
+        });
+        res.status(200).send(connectionAndCredentials);
     } else {
         console.log("connection record not found for id ", connectionId);
         res.status(500);
@@ -218,10 +252,40 @@ app.post('/api/register', cors(), async function (req, res) {
     res.status(200).send({ invite_url: invite.invitation });
 });
 
-app.post('/api/revoke', cors(), async function (req, res) {
-    console.log("revoking credential, id = ", credentialId);
-    await client.revokeCredential(credentialId);
-    console.log("Credential revoked!");
+app.post('/api/ebay/revoke', cors(), async function (req, res) {
+    console.log("revoking ebay credential, id = ", ebayCredentialId);
+    await client.revokeCredential(ebayCredentialId);
+    console.log("EBAY Credential revoked!");
+
+    const params =
+    {
+        basicMessageParameters: {
+            "connectionId": connectionId,
+            "text": "Ebay credential has been revoked. You may want to delete this from your wallet."
+        }
+    };
+    const resp = await client.sendMessage(params);
+
+    console.log("------- Message sent to user's agent !");
+
+    res.status(200).send();
+});
+
+app.post('/api/etsy/revoke', cors(), async function (req, res) {
+    console.log("revoking credential, id = ", etsyCredentialId);
+    await client.revokeCredential(etsyCredentialId);
+    console.log("ETSY Credential revoked!");
+
+    const params =
+    {
+        basicMessageParameters: {
+            "connectionId": connectionId,
+            "text": "Etsy credential has been revoked. You may want to delete this from your wallet."
+        }
+    };
+    const resp = await client.sendMessage(params);
+
+    console.log("------- Message sent to user's agent !");
     res.status(200).send();
 });
 
@@ -324,7 +388,7 @@ var server = server.listen(PORT, async function () {
     catch (e) {
         console.log(e);
     }
-   
+
     cache.add("webhookId", response.id);
     console.log('Listening on port %d', server.address().port);
 });

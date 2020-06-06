@@ -1,29 +1,36 @@
 import React, { Component } from 'react';
-import Toolbar from '@material-ui/core/Toolbar';
-import AppBar from '@material-ui/core/AppBar';
-import Paper from '@material-ui/core/Paper';
-import Typography from "@material-ui/core/es/Typography/Typography";
+import './button.css';
+import etsyItems from './components/Fields/etsy';
+import ebayItems from './components/Fields/ebay';
+import RegistrationDialog from './components/RegistrationDialog';
+import LoginDialog from './components/LoginDialog';
+import NavBar from './components/NavBar';
+import Form from './components/Form';
+
+import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
 import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
-import { TextField } from "@material-ui/core";
 import axios from 'axios';
 import QRcode from 'qrcode.react';
-import Spinner from './Spinner';
-import DialogActions from '@material-ui/core/DialogActions';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-
-import Collapse from '@material-ui/core/Collapse';
-import CloseIcon from '@material-ui/icons/Close';
-import Alert from '@material-ui/lab/Alert';
-import IconButton from '@material-ui/core/IconButton';
 
 axios.defaults.baseURL = 'https://localhost:3002/';
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 
+const muiTheme = createMuiTheme({
+    typography: {
+        // "fontFamily": `"Roboto", "Helvetica", "Arial", sans-serif`,
+        "fontFamily": `"Lato","Arial","Helvetica","FreeSans","sans-serif"`,
+        "fontSize": 14,
+        "fontWeightLight": 300,
+        "fontWeightRegular": 400,
+        "fontWeightMedium": 500
+    }
+});
+
 export class App extends Component {
+
     state = {
         user: {
             UserID: "",
@@ -67,11 +74,16 @@ export class App extends Component {
         email: '',
         connection_name: sessionStorage.getItem("name"),
         country: '',
-        passcode: '',
         collapse_open: false,
         login_loading: false,
         userData: {}
     };
+
+    setCollapseClosed() {
+        this.setState({
+            collapse_open: false
+        });
+    }
 
     handleSubmit() {
 
@@ -138,13 +150,27 @@ export class App extends Component {
     }
 
 
-    onRevoke = async () => {
-
-        console.log("Revoking credentials...");
-        await axios.post('/api/revoke', null);
+    onEbayRevoke = async () => {
+        this.setState(prevState => ({
+            ebay: { ...prevState.ebay, loading: true }
+        }));
+        console.log("Revoking EBAY credentials...");
+        await axios.post('/api/ebay/revoke', null);
 
         this.setState(prevState => ({
-            ebay: { ...prevState.ebay, has_been_revoked: true }
+            ebay: { ...prevState.ebay, loading: false, has_been_revoked: true }
+        }));
+    }
+
+    onEtsyRevoke = async () => {
+        this.setState(prevState => ({
+            etsy: { ...prevState.etsy, loading: true }
+        }));
+        console.log("Revoking ETSY credentials...");
+        await axios.post('/api/etsy/revoke', null);
+
+        this.setState(prevState => ({
+            etsy: { ...prevState.etsy, loading: false, has_been_revoked: true }
         }));
     }
 
@@ -162,17 +188,83 @@ export class App extends Component {
         }));
     }
 
-    getLoginLabel() {
-        console.log("WOOGIE login = ", this.state.login);
-        return this.state.login ? this.state.connection_name : "Login"
+    setEbayFieldValue = (event) => {
+        const { target: { name, value } } = event;
+        // this.setState(prevState => ({
+        //     ebay: { ...prevState.ebay, verification_accepted: true, has_been_revoked: false }
+        // }));
+        console.log("this.state.user = ", this.state.user, "name = ", name, "value = ", value);
+        this.setState(prevState => ({
+            user: {
+                ...prevState.user, [name]: value
+            } 
+        }));
+        // setFormState({ ...user, [name]: value });
+
     }
 
-    postLogin = async () => {
+    loadEbayCredentials = (resp) => {
+        const ebayValues = resp.data.credentials.filter(function(credential) {
+            return credential.values.Platform === "ebay";
+        });
+
+        let ebayFields;
+        if (ebayValues.length > 0) {
+            ebayFields = ebayValues[ebayValues.length - 1].values;
+
+            this.setState(prevState => ({
+                ebay: {
+                    ...prevState.ebay, qr_feedbackCollected: true,
+                    credential_accepted: true, has_been_revoked: false,
+                    loading: false
+                },
+                user: {
+                    UserID: ebayFields["User Name"],
+                    FeedbackScore: ebayFields["Feedback Score"],
+                    RegistrationDate: ebayFields["Registration Date"],
+                    UniqueNegativeFeedbackCount: ebayFields["Negative Feedback Count"],
+                    UniquePositiveFeedbackCount: ebayFields["Positive Feedback Count"],
+                    PositiveFeedbackPercent: ebayFields["Positive Feedback Percent"],
+                }
+            }));
+            sessionStorage.setItem("waitingForEbayUserData", "false");
+            sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
+        }
+    }
+
+    loadEtsyCredentials = (resp) => {
+        const etsyValues = resp.data.credentials.filter(function(credential) {
+            return credential.values.Platform === "etsy";
+        });
+
+        console.log(">>>>>>>>>>>>>>>> QUACK ebayValues = ", etsyValues);
+        let etsyFields;
+        if (etsyValues.length > 0) {
+            etsyFields = etsyValues[etsyValues.length - 1].values;
+            this.setState(prevState => ({
+                etsy: {
+                    ...prevState.etsy, qr_feedbackCollected: true,
+                    credential_accepted: true, has_been_revoked: false,
+                    loading: false
+                },
+                etsyuser: {
+                    UserID: etsyFields["User Name"],
+                    FeedbackCount: etsyFields["Feedback Count"],
+                    RegistrationDate: etsyFields["Registration Date"],
+                    PositiveFeedbackPercent: etsyFields["Positive Feedback Percent"],
+                }
+            }));
+            sessionStorage.setItem("waitingForEtsyUserData", "false");
+            sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        }
+    }
+
+    postLogin = async (code) => {
 
         this.setState({
             login_loading: true
         });
-        const loginInfo = { passcode: this.state.passcode };
+        const loginInfo = { passcode: code };
         let resp;
         try {
             resp = await axios.post('/api/login', loginInfo);
@@ -186,12 +278,17 @@ export class App extends Component {
         });
         if (resp && resp.status === 200) {
             console.log("Connection  = ", resp.data);
+            const name = resp.data.connectionContract.name;
             this.setState({
-                login: true, connection_name: resp.data.name, login_form_open: false
+                login: true, connection_name: name, login_form_open: false
             });
-            console.log("Setting name to ", resp.data.name);
-            sessionStorage.setItem("name", resp.data.name);
+            sessionStorage.setItem("name", name);
             sessionStorage.setItem("login", true);
+
+            // TODO check to see if there are any existing issued credentials for this user
+            // If so ... push the credentials back in to the forms for the correct platforms
+            this.loadEbayCredentials(resp);
+            this.loadEtsyCredentials(resp);
         } else {
             console.log("no connection found");
             this.setState({
@@ -200,14 +297,13 @@ export class App extends Component {
         }
     }
 
-
-    postRegister = async () => {
+    postRegister = async (form) => {
         const passcode = Math.floor(Math.random() * 900000) + 100000;
         const registrationInfo = {
-            firstname: this.state.firstname,
-            lastname: this.state.lastname,
-            email: this.state.email,
-            country: this.state.country,
+            firstname: form.firstname,
+            lastname: form.lastname,
+            email: form.email,
+            country: form.country,
             passcode: passcode.toString()
         }
         console.log(registrationInfo);
@@ -237,15 +333,15 @@ export class App extends Component {
         this.setState({ login: true });
     }
 
-    register = () => {
+    registerFormOpen = (open) => {
         this.setState({
-            register_form_open: true
+            register_form_open: open
         });
     }
 
-    login = () => {
+    loginFormOpen = (open) => {
         this.setState({
-            login_form_open: true
+            login_form_open: open
         });
     }
 
@@ -318,13 +414,15 @@ export class App extends Component {
         let res;
         try {
             res = await axios.get('/auth/etsy');
-            // res = await axios.get('/mike');
         } catch (e) {
-            console.log(">>>>>>>>>>>>>> CLOBBER e = ", e);
+            console.log(">>>>>>>>>>>>>> e = ", e);
         }
 
+        console.log("res.data = ", res.data);
         sessionStorage.setItem("waitingForEtsyUserData", "true");
+
         window.location = res.data;
+
         this.etsyGetUserData();
     }
 
@@ -388,17 +486,17 @@ export class App extends Component {
     etsybutton() {
 
         if (!this.state.etsy.qr_feedbackCollected) {
-            return (<Button style={{ backgroundColor: '#9b84ff' }}
+            return (<Button className="registerbutton"
                 onClick={() => this.onEtsyFeedback()} disabled={this.getDisabled("etsy")}>
                 {this.getInitialAcceptedLabel("etsy")}
             </Button>)
         } else if (!this.state.etsy.has_been_revoked) {
-            return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled("etsy")}
-                onClick={() => this.onRevoke()}>
+            return (<Button className="revokebutton" disabled={this.getDisabled("etsy")}
+                onClick={() => this.onEtsyRevoke()}>
                 {this.getAcceptedLabelRevoke("etsy")}
             </Button>)
         } else {
-            return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled("etsy")}
+            return (<Button className="registerbutton" disabled={this.getDisabled("etsy")}
                 onClick={() => this.onEtsyIssue()} >
                 {this.getAcceptedLabelIssue("etsy")}
             </Button>)
@@ -408,17 +506,17 @@ export class App extends Component {
 
     button() {
         if (!this.state.ebay.qr_feedbackCollected) {
-            return (<Button style={{ backgroundColor: '#9b84ff' }}
+            return (<Button className="registerbutton"
                 onClick={() => this.onFeedback()} disabled={this.getDisabled("ebay")}>
                 {this.getInitialAcceptedLabel("ebay")}
             </Button>)
         } else if (!this.state.ebay.has_been_revoked) {
-            return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled("ebay")}
-                onClick={() => this.onRevoke()}>
+            return (<Button className="revokebutton" disabled={this.getDisabled("ebay")}
+                onClick={() => this.onEbayRevoke()}>
                 {this.getAcceptedLabelRevoke("ebay")}
             </Button>)
         } else {
-            return (<Button style={{ backgroundColor: '#9b84ff' }} disabled={this.getDisabled("ebay")}
+            return (<Button className="registerbutton" disabled={this.getDisabled("ebay")}
                 onClick={() => this.onIssue()} >
                 {this.getAcceptedLabelIssue("ebay")}
             </Button>)
@@ -447,12 +545,6 @@ export class App extends Component {
         return this.state.register ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
     }
 
-    handleRegisterClose() {
-        this.setState({
-            register_form_open: false
-        });
-    }
-
     handleLoginClose() {
         this.setState({
             login_form_open: false
@@ -465,28 +557,10 @@ export class App extends Component {
         });
     }
 
-    handleFormSubmit(event) {
-        event.preventDefault();
-        console.log("firstname = ", this.state.firstname);
-        console.log("lastname = ", this.state.lastname);
-        console.log("email = ", this.state.email);
-        console.log("country = ", this.state.country);
-        console.log("passcode = ", this.state.passcode);
-
-        // we want to send this info across to the user's wallet
-        // call the 
+    setQRFormOpen(open) {
         this.setState({
-            qr_open: true
+            qr_open: open
         });
-        this.postRegister();
-    }
-
-    handleLoginFormSubmit(event) {
-        event.preventDefault();
-
-        console.log("passcode = ", this.state.passcode);
-
-        this.postLogin();
     }
 
     reloadLoginDetails() {
@@ -505,7 +579,7 @@ export class App extends Component {
             this.setState(prevState => ({
                 etsyuser: { ...prevState.etsy, ...etsy },
                 etsy: {
-                    credential_accepted: true, 
+                    credential_accepted: true,
                     has_been_revoked: true,
                     qr_feedbackCollected: true
                 }
@@ -520,13 +594,17 @@ export class App extends Component {
             this.setState(prevState => ({
                 user: { ...prevState.ebay, ...ebay },
                 ebay: {
-                    credential_accepted: true, 
+                    credential_accepted: true,
                     has_been_revoked: true,
                     loading: false,
                     qr_feedbackCollected: true
                 }
             }));
         }
+    }
+
+    getLoginLabel() {
+        return this.state.login ? this.state.connection_name : "Login"
     }
 
     componentDidMount() {
@@ -544,311 +622,58 @@ export class App extends Component {
         } else if (wet === "true") {
             this.etsyGetUserData();
         }
-        const card = this.state
+        const card = this.state;
+
+        const styles = {
+            paperContainer: {
+                height: '800px',
+                backgroundImage: `url(${"main.jpg"})`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center center",
+                backgroundSize: "cover",
+                backgroundAttachment: "fixed",
+            }
+        };
+
         return (
-            <div >
-                {/* The AppBar */}
-                <AppBar position="static">
-                    <Toolbar style={{ backgroundColor: '#812bff' }}>
-                        <img style={{}} />
-                        <Typography variant="h6">
-                            Capena - Delega: Seller Feedback Demo
-                        </Typography>
-                        <div style={{ flexGrow: 1 }}></div>
-                        <Button style={{ color: 'white' }} onClick={() => this.register()}>
-                            Register
-                        </Button>
-                        <Button style={{ color: 'white' }} onClick={() => this.login()}>
-                            {this.getLoginLabel()}
-                        </Button>
-                    </Toolbar>
-                </AppBar>
-
-                {/* The Paper */}
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <ThemeProvider muiTheme={muiTheme}>
+                <div style={styles.paperContainer}>
+                    <NavBar parent={this}></NavBar>
+                    {/* The Paper */}
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <Paper style={{ display: 'flex', maxWidth: '1000px', width: '500px', margin: '20px', padding: 20 }}>
-                            <div style={{ display: 'flex', padding: '24px 24px', flexDirection: 'column', width: '100%' }}>
-                                <div style={{ display: 'flex', marginBottom: '24px' }}>
-                                    <Typography variant="h5" style={{ flexGrow: 1 }}>
-                                        Create your eBay Credential
-                                </Typography>
-                                </div>
-
-                                <TextField
-                                    id="name"
-                                    label="User Name"
-                                    placeholder={"what's your ebay username?"}
-                                    value={card.user.UserID}
-                                    // onChange={(e) => this.setState({ name: e.target.value })}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <Spinner active={this.state.ebay.loading}></Spinner>
-                                <TextField
-                                    id="score"
-                                    label="Feedback Score"
-                                    placeholder={"what's your feedback score?"}
-                                    value={card.user.FeedbackScore}
-                                    // onChange={(e) => this.setState({ score: e.target.value })}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <TextField
-                                    id="org"
-                                    label="Registration Date"
-                                    //   placeholder={"where do you work?"} 
-                                    value={card.user.RegistrationDate}
-                                    //   onChange={(e) => this.setState({org: e.target.value})}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <TextField
-                                    id="nfeedcount"
-                                    label="Negative Feedback Count"
-                                    placeholder={"what's your #?"}
-                                    value={card.user.UniqueNegativeFeedbackCount}
-                                    //   onChange={(e) => this.setState({phone: e.target.value})}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <TextField
-                                    id="pfeedcount"
-                                    label="Postive Feedback Count"
-                                    placeholder={"what's your email?"}
-                                    value={card.user.UniquePositiveFeedbackCount}
-                                    //   onChange={(e) => this.setState({email: e.target.value})}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <TextField
-                                    id="pfeedpercent"
-                                    label="Postive Feedback Percent"
-                                    placeholder={"what's your email?"}
-                                    value={card.user.PositiveFeedbackPercent}
-                                    //   onChange={(e) => this.setState({email: e.target.value})}
-                                    style={{ marginBottom: '24px' }}
-                                />
-                                {this.button()}
-                                {/* {this.ebaybutton()} */}
-                                <Dialog open={this.state.register_form_open} onClose={() => this.handleRegisterClose()} aria-labelledby="form-dialog-title">
-                                    <DialogTitle id="form-dialog-title">Register</DialogTitle>
-                                    <DialogContent>
-                                        <DialogContentText>
-                                            To register to this website, please enter your name, email address and location here.
-                                </DialogContentText>
-                                        <form noValidate autoComplete="off" onSubmit={(e) => this.handleFormSubmit(e)}>
-                                            <TextField
-                                                margin="dense"
-                                                id="firstname"
-                                                label="First Name"
-                                                value={this.state.firstname}
-                                                onChange={(e) => this.setState({ firstname: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <TextField
-                                                margin="dense"
-                                                id="lastname"
-                                                label="Last Name"
-                                                value={this.state.lastname}
-                                                onChange={(e) => this.setState({ lastname: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <TextField
-                                                margin="dense"
-                                                id="email"
-                                                label="Email Address"
-                                                type="email"
-                                                value={this.state.email}
-                                                onChange={(e) => this.setState({ email: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <TextField
-                                                margin="dense"
-                                                id="country"
-                                                label="Country"
-                                                type="country"
-                                                value={this.state.country}
-                                                onChange={(e) => this.setState({ country: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <DialogActions>
-                                                <Button onClick={() => this.handleRegisterClose()} color="primary">
-                                                    Cancel
-                                </Button>
-                                                <Button type="submit" onClick={() => this.handleRegisterClose()} color="primary">
-                                                    Register
-                                </Button>
-                                            </DialogActions>
-                                        </form>
-
-                                    </DialogContent>
-
-                                </Dialog>
-                                <Dialog open={this.state.login_form_open} onClose={() => this.handleLoginClose()} aria-labelledby="form-dialog-title">
-                                    <DialogTitle id="form-dialog-title">Login</DialogTitle>
-                                    <DialogContent>
-                                        <DialogContentText>
-                                            Please enter the passcode generated for your registration credentials, or register as a new user by clicking on "Register"
-                                </DialogContentText>
-                                        <form noValidate autoComplete="off" onSubmit={(e) => this.handleLoginFormSubmit(e)}>
-                                            <Spinner active={this.state.login_loading}></Spinner>
-                                            <TextField
-                                                margin="dense"
-                                                id="passcode"
-                                                label="Passcode"
-                                                type="text"
-                                                value={this.state.passcode}
-                                                onChange={(e) => this.setState({ passcode: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <DialogActions>
-                                                <Button onClick={() => this.handleLoginClose()} color="primary">
-                                                    Cancel
-                                </Button>
-                                                <Button type="submit" onClick={() => this.startLoader()} color="primary">
-                                                    Login
-                                </Button>
-                                            </DialogActions>
-
-                                        </form>
-                                        <Collapse in={this.state.collapse_open} style={{
-                                            position: 'absolute',
-                                            top: '40%',
-                                            left: '25%',
-                                            // marginTop: '10rem', 
-                                            // marginLeft: '-15rem', 
-                                            width: '20rem'
-                                        }}>
-                                            <Alert
-                                                severity="error"
-                                                action={
-                                                    <IconButton
-                                                        aria-label="close"
-                                                        color="inherit"
-                                                        size="small"
-                                                        onClick={() => {
-                                                            this.setState({ collapse_open: false })
-                                                        }}
-                                                    >
-                                                        <CloseIcon fontSize="inherit" />
-                                                    </IconButton>
-                                                }
-                                            >
-                                                Invalid Passcode: connection not found. Please try again.
-                                        </Alert>
-                                        </Collapse>
-                                    </DialogContent>
-
-                                </Dialog>
-
-                            </div>
-                        </Paper>
+                        <Form
+                            parent={this}
+                            items={ebayItems}
+                            loading={this.state.ebay.loading}
+                            card={this.state.user}
+                            title={"Create your eBay Credential"}
+                            platform={"ebay"}>
+                        </Form>
+                        <Form
+                            parent={this}
+                            items={etsyItems}
+                            loading={false}
+                            card={this.state.etsyuser}
+                            title={"Create your Etsy Credential"}
+                            platform={"etsy"}>
+                        </Form>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                        <Paper style={{ display: 'flex', maxWidth: '1000px', width: '500px', margin: '20px', padding: 20 }}>
-                            <div style={{ display: 'flex', padding: '24px 24px', flexDirection: 'column', width: '100%' }}>
-                                <div style={{ display: 'flex', marginBottom: '24px' }}>
-                                    <Typography variant="h5" style={{ flexGrow: 1 }}>
-                                        Create your Etsy Credential
-                                </Typography>
-                                </div>
-
-                                <TextField
-                                    id="name"
-                                    label="User Name"
-                                    placeholder={"what's your ebay username?"}
-                                    value={card.etsyuser.UserID}
-                                    // onChange={(e) => this.setState({ name: e.target.value })}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <Spinner active={this.state.etsy.loading}></Spinner>
-                                <TextField
-                                    id="count"
-                                    label="Feedback Count"
-                                    placeholder={"what's your feedback score?"}
-                                    value={card.etsyuser.FeedbackCount}
-                                    // onChange={(e) => this.setState({ score: e.target.value })}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <TextField
-                                    id="org"
-                                    label="Registration Date"
-                                    //   placeholder={"where do you work?"} 
-                                    value={card.etsyuser.RegistrationDate}
-                                    //   onChange={(e) => this.setState({org: e.target.value})}
-                                    style={{ marginBottom: '12px' }}
-                                />
-                                <TextField
-                                    id="pfeedpercent"
-                                    label="Postive Feedback Percent"
-                                    placeholder={"what's your email?"}
-                                    value={card.etsyuser.PositiveFeedbackPercent}
-                                    //   onChange={(e) => this.setState({email: e.target.value})}
-                                    style={{ marginBottom: '12px' }}
-                                />
-
-
-                                {this.etsybutton()}
-                                {/* {this.button2("etsy")} */}
-
-
-                                <Dialog open={this.state.register_form_open} onClose={() => this.handleRegisterClose()} aria-labelledby="form-dialog-title">
-                                    <DialogTitle id="form-dialog-title">Register</DialogTitle>
-                                    <DialogContent>
-                                        <DialogContentText>
-                                            To register to this website, please enter your name, email address and location here.
-                                </DialogContentText>
-                                        <form noValidate autoComplete="off" onSubmit={(e) => this.handleFormSubmit(e)}>
-                                            <TextField
-                                                margin="dense"
-                                                id="firstname"
-                                                label="First Name"
-                                                value={this.state.firstname}
-                                                onChange={(e) => this.setState({ firstname: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <TextField
-                                                margin="dense"
-                                                id="lastname"
-                                                label="Last Name"
-                                                value={this.state.lastname}
-                                                onChange={(e) => this.setState({ lastname: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <TextField
-                                                margin="dense"
-                                                id="email"
-                                                label="Email Address"
-                                                type="email"
-                                                value={this.state.email}
-                                                onChange={(e) => this.setState({ email: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <TextField
-                                                margin="dense"
-                                                id="country"
-                                                label="Country"
-                                                type="country"
-                                                value={this.state.country}
-                                                onChange={(e) => this.setState({ country: e.target.value })}
-                                                fullWidth
-                                            />
-                                            <DialogActions>
-                                                <Button onClick={() => this.handleRegisterClose()} color="primary">
-                                                    Cancel
-                                                </Button>
-                                                <Button type="submit" onClick={() => this.handleRegisterClose()} color="primary">
-                                                    Register
-                                                </Button>
-                                            </DialogActions>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
-                            </div>
-                        </Paper>
-                    </div>
-                </div>
-                <Dialog open={this.state.qr_open} onClose={() => this.setState({ qr_open: false, qr_hasClosed: true })}>
-                    <DialogTitle style={{ width: "300px" }}>{this.getQRCodeLabel()}</DialogTitle>
-                    <QRcode size="200" value={this.state.invite_url} style={{ margin: "0 auto", padding: "10px" }} />
-                </Dialog>
-            </div >
+                    <LoginDialog
+                        form_open={this.state.login_form_open}
+                        parent={this}
+                        collapse_open={this.state.collapse_open}
+                        login_loading={this.state.login_loading}>
+                    </LoginDialog>
+                    <RegistrationDialog
+                        form_open={this.state.register_form_open}
+                        parent={this}>
+                    </RegistrationDialog>
+                    <Dialog open={this.state.qr_open} onClose={() => this.setState({ qr_open: false, qr_hasClosed: true })}>
+                        <DialogTitle style={{ width: "300px" }}>{this.getQRCodeLabel()}</DialogTitle>
+                        <QRcode size="200" value={this.state.invite_url} style={{ margin: "0 auto", padding: "10px" }} />
+                    </Dialog>
+                </div >
+            </ThemeProvider>
         )
     }
 }

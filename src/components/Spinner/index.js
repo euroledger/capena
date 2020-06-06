@@ -3,6 +3,7 @@ import HashLoader from 'react-spinners/HashLoader';
 import { css } from '@emotion/core';
 
 const override = css`
+    top: 50%,
     display: block;
     margin: 0 auto;
     max-height: 0;

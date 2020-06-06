@@ -20,11 +20,11 @@ module.exports = (app) => {
 
     app.get('/auth/etsy', function (req, res) {
 
-        console.log(">>>> feedbackObtained = ", feedbackObtained);
-        if (feedbackObtained === true) {
-            res.status(200); // no point going across to etsy if already got the credentials
-            return;
-        }
+        // console.log(">>>> feedbackObtained = ", feedbackObtained);
+        // if (feedbackObtained === true) {
+        //     res.status(200); // no point going across to etsy if already got the credentials
+        //     return;
+        // }
         console.log("Get URL for ETSY sign-in");
 
         etsyclient.requestToken(function (err, response) {
@@ -65,7 +65,7 @@ module.exports = (app) => {
                 if (body) {
                     feedbackObtained = true;
                     userData = body.results[0];
-                    // return;
+                    console.log(userData);
                     res.redirect("http://localhost:3000/");
                 }
             });
