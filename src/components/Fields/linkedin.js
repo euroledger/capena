@@ -1,4 +1,4 @@
-const ebayItems = [
+const linkedinItems = [
     {
         id: "UserID",
         label: "User Name",
@@ -36,4 +36,4 @@ const ebayItems = [
     }
 ];
 
-export default ebayItems;
+export default linkedinItems;

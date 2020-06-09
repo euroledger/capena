@@ -2,10 +2,21 @@ import React, { Component } from 'react';
 import './button.css';
 import etsyItems from './components/Fields/etsy';
 import ebayItems from './components/Fields/ebay';
+import uberItems from './components/Fields/uber';
+import amazonItems from './components/Fields/amazon';
+import facebookItems from './components/Fields/facebook';
+import linkedinItems from './components/Fields/linkedin';
+import stackoverflowItems from './components/Fields/stackoverflow';
+import twitterItems from './components/Fields/twitter';
+import upworkItems from './components/Fields/upwork';
 import RegistrationDialog from './components/RegistrationDialog';
 import LoginDialog from './components/LoginDialog';
 import NavBar from './components/NavBar';
 import Form from './components/Form';
+import Paper from '@material-ui/core/Paper';
+import Tabs from '@material-ui/core/Tabs';
+import Tab from '@material-ui/core/Tab';
+import TabPanel from './components/TabPanel';
 
 import { createMuiTheme, ThemeProvider } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
@@ -38,14 +49,76 @@ export class App extends Component {
             RegistrationDate: "",
             UniqueNegativeFeedbackCount: "",
             UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: ""
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
         },
-
         etsyuser: {
             UserID: "",
             FeedbackCount: "",
             PositiveFeedbackPercent: "",
-            RegistrationDate: ""
+            RegistrationDate: "",
+            ExpiryDate: ""
+        },
+        uberuser: {
+            DriverID: "",
+            Rating: "",
+            ActivationStatus: "",
+            TripCount: "",
+            ExpiryDate: ""
+        },
+        amazonuser: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
+        },
+        facebookuser: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
+        },
+        linkedinuser: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
+        },
+        stackoverflowuser: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
+        },
+        twitteruser: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
+        },
+        upworkuser: {
+            UserID: "",
+            FeedbackScore: "",
+            RegistrationDate: "",
+            UniqueNegativeFeedbackCount: "",
+            UniquePositiveFeedbackCount: "",
+            PositiveFeedbackPercent: "",
+            ExpiryDate: ""
         },
         qr_open: false,
         qr_hasClosed: false,
@@ -65,6 +138,55 @@ export class App extends Component {
             has_been_revoked: true,
             loading: false,
         },
+        uber: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
+        amazon: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
+        facebook: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
+        linkedin: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
+        stackoverflow: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
+        twitter: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
+        upwork: {
+            qr_feedbackCollected: false,
+            credential_accepted: true,
+            verification_accepted: true,
+            has_been_revoked: true,
+            loading: false,
+        },
         register: true,
         register_form_open: false,
         login: sessionStorage.getItem("login") === "true" ? true : false,
@@ -76,7 +198,8 @@ export class App extends Component {
         country: '',
         collapse_open: false,
         login_loading: false,
-        userData: {}
+        userData: {},
+        value: 0
     };
 
     setCollapseClosed() {
@@ -157,9 +280,20 @@ export class App extends Component {
         console.log("Revoking EBAY credentials...");
         await axios.post('/api/ebay/revoke', null);
 
+        // reset state back to initial state, clear the form and the saved ebay session data
         this.setState(prevState => ({
-            ebay: { ...prevState.ebay, loading: false, has_been_revoked: true }
+            ebay: { ...prevState.ebay, loading: false, has_been_revoked: true, qr_feedbackCollected: false },
+            user: {
+                UserID: "",
+                FeedbackScore: "",
+                RegistrationDate: "",
+                UniqueNegativeFeedbackCount: "",
+                UniquePositiveFeedbackCount: "",
+                PositiveFeedbackPercent: "",
+                ExpiryDate: ""
+            }
         }));
+        sessionStorage.setItem("ebayUserData", null);
     }
 
     onEtsyRevoke = async () => {
@@ -169,9 +303,19 @@ export class App extends Component {
         console.log("Revoking ETSY credentials...");
         await axios.post('/api/etsy/revoke', null);
 
+        // reset state back to initial state, clear the form and the session data
         this.setState(prevState => ({
-            etsy: { ...prevState.etsy, loading: false, has_been_revoked: true }
+            etsy: { ...prevState.etsy, loading: false, has_been_revoked: true, qr_feedbackCollected: false },
+            etsyuser: {
+                UserID: "",
+                FeedbackCount: "",
+                PositiveFeedbackPercent: "",
+                RegistrationDate: "",
+                ExpiryDate: ""
+            }
         }));
+        sessionStorage.setItem("etsyUserData", null);
+
     }
 
     onVerify = async () => {
@@ -190,28 +334,36 @@ export class App extends Component {
 
     setEbayFieldValue = (event) => {
         const { target: { name, value } } = event;
-        // this.setState(prevState => ({
-        //     ebay: { ...prevState.ebay, verification_accepted: true, has_been_revoked: false }
-        // }));
-        console.log("this.state.user = ", this.state.user, "name = ", name, "value = ", value);
+
         this.setState(prevState => ({
             user: {
                 ...prevState.user, [name]: value
-            } 
+            }
         }));
-        // setFormState({ ...user, [name]: value });
-
     }
 
-    loadEbayCredentials = (resp) => {
-        const ebayValues = resp.data.credentials.filter(function(credential) {
+    setEtsyFieldValue = (event) => {
+        const { target: { name, value } } = event;
+
+        this.setState(prevState => ({
+            etsyuser: {
+                ...prevState.etsyuser, [name]: value
+            }
+        }));
+    }
+
+    loadEbayCredentials = (credentials) => {
+        const ebayValues = credentials.filter(function (credential) {
             return credential.values.Platform === "ebay";
         });
 
         let ebayFields;
+        let creationDate;
         if (ebayValues.length > 0) {
             ebayFields = ebayValues[ebayValues.length - 1].values;
-
+            creationDate = ebayValues[ebayValues.length - 1].issuedAtUtc;
+            var d = new Date(creationDate);
+            d.setMonth(d.getMonth() + 1);
             this.setState(prevState => ({
                 ebay: {
                     ...prevState.ebay, qr_feedbackCollected: true,
@@ -225,6 +377,7 @@ export class App extends Component {
                     UniqueNegativeFeedbackCount: ebayFields["Negative Feedback Count"],
                     UniquePositiveFeedbackCount: ebayFields["Positive Feedback Count"],
                     PositiveFeedbackPercent: ebayFields["Positive Feedback Percent"],
+                    ExpiryDate: this.formatDate(d)
                 }
             }));
             sessionStorage.setItem("waitingForEbayUserData", "false");
@@ -232,15 +385,18 @@ export class App extends Component {
         }
     }
 
-    loadEtsyCredentials = (resp) => {
-        const etsyValues = resp.data.credentials.filter(function(credential) {
+    // load credentials from those previously issued 
+    loadEtsyCredentials = (credentials) => {
+        const etsyValues = credentials.filter(function (credential) {
             return credential.values.Platform === "etsy";
         });
-
-        console.log(">>>>>>>>>>>>>>>> QUACK ebayValues = ", etsyValues);
         let etsyFields;
+        let creationDate;
         if (etsyValues.length > 0) {
             etsyFields = etsyValues[etsyValues.length - 1].values;
+            creationDate = etsyValues[etsyValues.length - 1].issuedAtUtc;
+            var d = new Date(creationDate);
+            d.setMonth(d.getMonth() + 1);
             this.setState(prevState => ({
                 etsy: {
                     ...prevState.etsy, qr_feedbackCollected: true,
@@ -252,6 +408,7 @@ export class App extends Component {
                     FeedbackCount: etsyFields["Feedback Count"],
                     RegistrationDate: etsyFields["Registration Date"],
                     PositiveFeedbackPercent: etsyFields["Positive Feedback Percent"],
+                    ExpiryDate: this.formatDate(new Date(d))
                 }
             }));
             sessionStorage.setItem("waitingForEtsyUserData", "false");
@@ -285,10 +442,9 @@ export class App extends Component {
             sessionStorage.setItem("name", name);
             sessionStorage.setItem("login", true);
 
-            // TODO check to see if there are any existing issued credentials for this user
-            // If so ... push the credentials back in to the forms for the correct platforms
-            this.loadEbayCredentials(resp);
-            this.loadEtsyCredentials(resp);
+            // push the credentials back in to the forms for the correct platforms
+            this.loadEbayCredentials(resp.data.credentials);
+            this.loadEtsyCredentials(resp.data.credentials);
         } else {
             console.log("no connection found");
             this.setState({
@@ -368,6 +524,9 @@ export class App extends Component {
         console.log("User Data info = ", user.data.feedback_info["score"]);
         console.log("score = ", score);
 
+        var d = new Date();
+        d.setMonth(d.getMonth() + 1);
+
         this.setState(prevState => ({
             etsy: {
                 ...prevState.etsy, qr_feedbackCollected: true,
@@ -377,7 +536,8 @@ export class App extends Component {
                 UserID: user.data.login_name,
                 FeedbackCount: count,
                 RegistrationDate: this.formatDate(new Date(user.data.creation_tsz * 1000)),
-                PositiveFeedbackPercent: score
+                PositiveFeedbackPercent: score,
+                ExpiryDate: this.formatDate(d)
             }
         }));
         sessionStorage.setItem("waitingForEtsyUserData", "false");
@@ -390,6 +550,8 @@ export class App extends Component {
 
         console.log("User Data = ", user.data);
 
+        var d = new Date();
+        d.setMonth(d.getMonth() + 1);
         this.setState(prevState => ({
             ebay: {
                 ...prevState.ebay, qr_feedbackCollected: true,
@@ -402,6 +564,7 @@ export class App extends Component {
                 UniqueNegativeFeedbackCount: user.data.UniqueNegativeFeedbackCount,
                 UniquePositiveFeedbackCount: user.data.UniquePositiveFeedbackCount,
                 PositiveFeedbackPercent: user.data.PositiveFeedbackPercent,
+                ExpiryDate: this.formatDate(d)
             }
         }));
 
@@ -450,6 +613,65 @@ export class App extends Component {
         console.log("Getting Etsy feedback...")
         this.etsyAuth();
     }
+
+    onAmazonFeedback = () => {
+        console.log("Getting Amazon feedback...");
+        this.setState(prevState => ({
+            amazon: { ...prevState.amazon, loading: true }
+        }));
+        var d = new Date();
+        d.setMonth(d.getMonth() + 1);
+        setTimeout(() => {
+            console.log("DONE!");
+
+            this.setState(prevState => ({
+                amazon: {
+                    ...prevState.amazon,
+                    qr_feedbackCollected: true,
+                    loading: false
+                },
+                amazonuser: {
+                    UserID: 'Alice Richardson',
+                    FeedbackScore: "0",
+                    RegistrationDate: "05-20-2018",
+                    UniqueNegativeFeedbackCount: "0",
+                    UniquePositiveFeedbackCount: "0",
+                    PositiveFeedbackPercent: "0",
+                    ExpiryDate: this.formatDate(d)
+                }
+            }));
+        }, 3000);
+        // this.etsyAuth();
+    }
+
+    onUberFeedback = () => {
+        console.log("Getting Uber feedback...");
+        this.setState(prevState => ({
+            uber: { ...prevState.uber, loading: true }
+        }));
+        var d = new Date();
+        d.setMonth(d.getMonth() + 1);
+        setTimeout(() => {
+            console.log("DONE!");
+
+            this.setState(prevState => ({
+                uber: {
+                    ...prevState.amazon,
+                    qr_feedbackCollected: true,
+                    loading: false
+                },
+                uberuser: {
+                    DriverID: 'Alice Richardson',
+                    Rating: "5",
+                    ActivationStatus: "Active",
+                    TripCount: "0",
+                    ExpiryDate: this.formatDate(d)
+                }
+            }));
+        }, 3000);
+        // this.etsyAuth();
+    }
+
     getLabel(platform) {
         if (!this.state[platform].qr_feedbackCollected) {
             return "Password";
@@ -504,6 +726,44 @@ export class App extends Component {
 
     }
 
+    uberbutton() {
+        if (!this.state.uber.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onUberFeedback()} disabled={this.getDisabled("uber")}>
+                {this.getInitialAcceptedLabel("uber")}
+            </Button>)
+        } else if (!this.state.uber.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("uber")}
+                onClick={() => this.onUberRevoke()}>
+                {this.getAcceptedLabelRevoke("uber")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("uber")}
+                onClick={() => this.onUberIssue()} >
+                {this.getAcceptedLabelIssue("uber")}
+            </Button>)
+        }
+    }
+
+    amazonbutton() {
+        if (!this.state.amazon.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onAmazonFeedback()} disabled={this.getDisabled("amazon")}>
+                {this.getInitialAcceptedLabel("amazon")}
+            </Button>)
+        } else if (!this.state.amazon.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("amazon")}
+                onClick={() => this.onAmazonRevoke()}>
+                {this.getAcceptedLabelRevoke("amazon")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("amazon")}
+                onClick={() => this.onAmazonIssue()} >
+                {this.getAcceptedLabelIssue("amazon")}
+            </Button>)
+        }
+    }
+
     button() {
         if (!this.state.ebay.qr_feedbackCollected) {
             return (<Button className="registerbutton"
@@ -536,10 +796,6 @@ export class App extends Component {
             {this.getAcceptedLabelVerify("etsy")}
         </Button>)
     }
-
-    // etsybutton2() {
-
-    // }
 
     getQRCodeLabel() {
         return this.state.register ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
@@ -613,6 +869,10 @@ export class App extends Component {
         this.reloadEbayUserDetails();
     }
 
+    handleChange = (event, newValue) => {
+        this.setState({ value: newValue });
+    };
+
     render() {
 
         let web = sessionStorage.getItem("waitingForEbayUserData");
@@ -624,23 +884,20 @@ export class App extends Component {
         }
         const card = this.state;
 
-        const styles = {
-            paperContainer: {
-                height: '800px',
-                backgroundImage: `url(${"main.jpg"})`,
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "center center",
-                backgroundSize: "cover",
-                backgroundAttachment: "fixed",
-            }
-        };
+
+        const a11yProps = (index) => {
+            return {
+                id: `simple-tab-${index}`,
+                'aria-controls': `simple-tabpanel-${index}`,
+            };
+        }
 
         return (
             <ThemeProvider muiTheme={muiTheme}>
-                <div style={styles.paperContainer}>
+                <div >
                     <NavBar parent={this}></NavBar>
                     {/* The Paper */}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    {/* <div style={{ display: 'flex', justifyContent: 'center' }}>
                         <Form
                             parent={this}
                             items={ebayItems}
@@ -657,7 +914,129 @@ export class App extends Component {
                             title={"Create your Etsy Credential"}
                             platform={"etsy"}>
                         </Form>
-                    </div>
+                    </div> */}
+                    <Paper style={{
+                        height: '800px',
+                        backgroundImage: `url(${"main.jpg"})`,
+                        backgroundRepeat: "no-repeat",
+                        backgroundPosition: "center center",
+                        backgroundSize: "cover",
+                        backgroundAttachment: "fixed",
+                        flexGrow: 1
+                    }}>
+                        <Tabs
+                            value={this.state.value}
+                            onChange={this.handleChange}
+                            indicatorColor="primary"
+                            textColor="primary"
+                            centered
+                        >
+    
+                            <Tab icon={<img style={{ height: '60px', width: '60px' }} alt="" src="ebay.png" />} {...a11yProps(0)} />
+                            <Tab icon={<img style={{ height: '21px', width: '51px', marginTop: '-10px' }} alt="" src="etsy.png" />}{...a11yProps(1)} />
+                            <Tab icon={<img style={{ height: '56px', width: '61px', marginTop: '-29px' }} alt="" src="upwork2.png" />} {...a11yProps(2)} />
+                            <Tab icon={<img style={{ height: '73px', width: '60px' }} alt="" src="amazon3.png" />} {...a11yProps(3)} />
+                            <Tab icon={<img style={{ height: '58px', width: '61px', marginTop: '-10px' }} alt="" src="uber2.png" />} {...a11yProps(4)} />
+
+                            <Tab icon={<img style={{ height: '48px', width: '119px', marginTop: '-10px' }} alt="" src="facebook.png" />} {...a11yProps(5)} />
+
+                            <Tab icon={<img style={{ height: '58px', width: '61px', marginTop: '-10px' }} alt="" src="linkedin.png" />} {...a11yProps(6)} />
+                            <Tab icon={<img style={{ height: '32px', width: '79px', marginTop: '-19px' }} alt="" src="stackoverflow.png" />} {...a11yProps(7)} />
+                            <Tab icon={<img style={{ height: '20px', width: '85px', marginTop: '-10px' }} alt="" src="twitter4.png" />} {...a11yProps(8)} />
+                           
+                        </Tabs>
+                        <TabPanel value={this.state.value} index={0}>
+                            <Form
+                                parent={this}
+                                items={ebayItems}
+                                loading={this.state.ebay.loading}
+                                card={this.state.user}
+                                title={"Create your eBay Credential"}
+                                platform={"ebay"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={1}>
+                            <Form
+                                parent={this}
+                                items={etsyItems}
+                                loading={false}
+                                card={this.state.etsyuser}
+                                title={"Create your Etsy Credential"}
+                                platform={"etsy"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={2}>
+                            <Form
+                                parent={this}
+                                items={upworkItems}
+                                loading={this.state.upwork.loading}
+                                card={this.state.upworkuser}
+                                title={"Create your Upwork Credential"}
+                                platform={"upwork"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={3}>
+                            <Form
+                                parent={this}
+                                items={amazonItems}
+                                loading={this.state.amazon.loading}
+                                card={this.state.amazonuser}
+                                title={"Create your Amazon Credential"}
+                                platform={"amazon"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={4}>
+                            <Form
+                                parent={this}
+                                items={uberItems}
+                                loading={this.state.uber.loading}
+                                card={this.state.uberuser}
+                                title={"Create your Uber Credential"}
+                                platform={"uber"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={5}>
+                            <Form
+                                parent={this}
+                                items={facebookItems}
+                                loading={this.state.facebook.loading}
+                                card={this.state.facebookuser}
+                                title={"Create your Facebook Credential"}
+                                platform={"facebook"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={6}>
+                            <Form
+                                parent={this}
+                                items={linkedinItems}
+                                loading={this.state.linkedin.loading}
+                                card={this.state.linkedinuser}
+                                title={"Create your LinkedIn Credential"}
+                                platform={"linkedin"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={7}>
+                            <Form
+                                parent={this}
+                                items={stackoverflowItems}
+                                loading={this.state.stackoverflow.loading}
+                                card={this.state.stackoverflowuser}
+                                title={"Create your Stack Overflow Credential"}
+                                platform={"stachoverflow"}>
+                            </Form>
+                        </TabPanel>
+                        <TabPanel value={this.state.value} index={8}>
+                            <Form
+                                parent={this}
+                                items={twitterItems}
+                                loading={this.state.twitter.loading}
+                                card={this.state.twitteruser}
+                                title={"Create your Twitter Credential"}
+                                platform={"twitter"}>
+                            </ Form>
+                        </TabPanel>
+                      
+                    </Paper>
                     <LoginDialog
                         form_open={this.state.login_form_open}
                         parent={this}
@@ -673,7 +1052,7 @@ export class App extends Component {
                         <QRcode size="200" value={this.state.invite_url} style={{ margin: "0 auto", padding: "10px" }} />
                     </Dialog>
                 </div >
-            </ThemeProvider>
+            </ThemeProvider >
         )
     }
 }

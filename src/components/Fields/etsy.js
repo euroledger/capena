@@ -18,6 +18,11 @@ const etsyItems = [
         id: "PositiveFeedbackPercent",
         label: "Positive Feedback Percent",
         disabled: false
+    },
+    {
+        id: "ExpiryDate",
+        label: "Credential Expiry Date",
+        disabled: true
     }
 ];
 
