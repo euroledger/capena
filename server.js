@@ -147,6 +147,33 @@ app.post('/api/issue', cors(), async function (req, res) {
     }
 });
 
+
+app.post('/api/uber/issue', cors(), async function (req, res) {
+    console.log("IN /api/uber/issue");
+    platform = "uber";
+    if (connectionId) {
+        console.log("issue credential with connection id " + connectionId + " params = ", req.body);
+        var params =
+        {
+            credentialOfferParameters: {
+                definitionId: process.env.CRED_DEF_ID_UBER,
+                connectionId: connectionId,
+                credentialValues: {
+                    "Platform": "uber",
+                    "Driver Name": req.body["driver"],
+                    "Driver Rating": req.body["rating"],
+                    "Activation Status": req.body["status"],
+                    "Trip Count": req.body["tripcount"],                }
+            }
+        }
+        await client.createCredential(params);
+        console.log("----------------------> CREDENTIAL CREATED!");
+        res.status(200).send();
+    } else {
+        res.status(500).send("Not connected");
+    }
+});
+
 app.post('/api/etsy/issue', cors(), async function (req, res) {
     console.log("IN /api/etsy/issue");
     platform = "etsy";
@@ -320,14 +347,18 @@ app.post('/api/sendkeyverification', cors(), async function (req, res) {
     const params =
     {
         verificationPolicyParameters: {
-            "name": "ebay2",
+            "name": "ebay",
             "version": "1.0",
             "attributes": [
                 {
-                    "policyName": "ebay May 20 (2)",
+                    "policyName": "eBay Verification",
                     "attributeNames": [
                         "User Name",
-                        "Feedback Score"
+                        "Feedback Score",
+                        "Registration Date",
+                        "Negative Feedback Count",
+                        "Positive Feedback Count",
+                        "Positive Feedback Percent",
                     ],
                     "restrictions": null
                 }

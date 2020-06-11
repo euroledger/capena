@@ -250,6 +250,7 @@ export class App extends Component {
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, credential_accepted: true, has_been_revoked: false }
         }));
+        sessionStorage.setItem("selectedTab", 0);
     }
 
     onEtsyIssue = async () => {
@@ -270,8 +271,29 @@ export class App extends Component {
         this.setState(prevState => ({
             etsy: { ...prevState.etsy, credential_accepted: true, has_been_revoked: false }
         }));
+        sessionStorage.setItem("selectedTab", 1);
     }
 
+    onUberIssue = async () => {
+        const uberRatings = {
+            driver: this.state.uberuser.DriverID,
+            rating: this.state.uberuser.Rating.toString(),
+            status: this.state.uberuser.ActivationStatus.toString(),
+            tripcount: this.state.uberuser.TripCount
+        }
+
+        this.setState(prevState => ({
+            uber: { ...prevState.uber, credential_accepted: false }
+        }));
+
+        console.log("ISSUING UBER CREDENTIALS: ", uberRatings);
+        await axios.post('/api/uber/issue', uberRatings);
+
+        await axios.post('/api/credential_accepted', null);
+        this.setState(prevState => ({
+            uber: { ...prevState.uber, credential_accepted: true, has_been_revoked: false }
+        }));
+    }
 
     onEbayRevoke = async () => {
         this.setState(prevState => ({
@@ -315,6 +337,28 @@ export class App extends Component {
             }
         }));
         sessionStorage.setItem("etsyUserData", null);
+
+    }
+
+    onUberRevoke = async () => {
+        this.setState(prevState => ({
+            uber: { ...prevState.uber, loading: true }
+        }));
+        console.log("Revoking UBER credentials...");
+        await axios.post('/api/uber/revoke', null);
+
+        // reset state back to initial state, clear the form and the session data
+        this.setState(prevState => ({
+            uber: { ...prevState.uber, loading: false, has_been_revoked: true, qr_feedbackCollected: false },
+            uberuser: {
+                DriverID: "",
+                Rating: "",
+                ActivationStatus: "",
+                TripCount: "",
+                ExpiryDate: ""
+            }
+        }));
+        sessionStorage.setItem("uberUserData", null);
 
     }
 
@@ -416,6 +460,36 @@ export class App extends Component {
         }
     }
 
+       // load credentials from those previously issued 
+       loadUberCredentials = (credentials) => {
+        const uberValues = credentials.filter(function (credential) {
+            return credential.values.Platform === "uber";
+        });
+        let uberFields;
+        let creationDate;
+        if (uberValues.length > 0) {
+            uberFields = uberValues[uberValues.length - 1].values;
+            creationDate = uberValues[uberValues.length - 1].issuedAtUtc;
+            var d = new Date(creationDate);
+            d.setMonth(d.getMonth() + 1);
+            this.setState(prevState => ({
+                uber: {
+                    ...prevState.uber, qr_feedbackCollected: true,
+                    credential_accepted: true, has_been_revoked: false,
+                    loading: false
+                },
+                uberuser: {
+                    DriverID: uberFields["Driver Name"],
+                    Rating: uberFields["Driver Rating"],
+                    ActivationStatus: uberFields["Activation Status"],
+                    TripCount: uberFields["Trip Count"],
+                    ExpiryDate: this.formatDate(new Date(d))
+                }
+            }));
+            sessionStorage.setItem("uberUserData", JSON.stringify(this.state.uberuser));
+        }
+    }
+
     postLogin = async (code) => {
 
         this.setState({
@@ -445,6 +519,7 @@ export class App extends Component {
             // push the credentials back in to the forms for the correct platforms
             this.loadEbayCredentials(resp.data.credentials);
             this.loadEtsyCredentials(resp.data.credentials);
+            this.loadUberCredentials(resp.data.credentials);
         } else {
             console.log("no connection found");
             this.setState({
@@ -664,7 +739,7 @@ export class App extends Component {
                     DriverID: 'Alice Richardson',
                     Rating: "5",
                     ActivationStatus: "Active",
-                    TripCount: "0",
+                    TripCount: "1796",
                     ExpiryDate: this.formatDate(d)
                 }
             }));
@@ -706,7 +781,6 @@ export class App extends Component {
     }
 
     etsybutton() {
-
         if (!this.state.etsy.qr_feedbackCollected) {
             return (<Button className="registerbutton"
                 onClick={() => this.onEtsyFeedback()} disabled={this.getDisabled("etsy")}>
@@ -760,6 +834,101 @@ export class App extends Component {
             return (<Button className="registerbutton" disabled={this.getDisabled("amazon")}
                 onClick={() => this.onAmazonIssue()} >
                 {this.getAcceptedLabelIssue("amazon")}
+            </Button>)
+        }
+    }
+
+    upworkbutton() {
+        if (!this.state.upwork.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onUpworkFeedback()} disabled={this.getDisabled("upwork")}>
+                {this.getInitialAcceptedLabel("upwork")}
+            </Button>)
+        } else if (!this.state.upwork.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("upwork")}
+                onClick={() => this.onUpworkRevoke()}>
+                {this.getAcceptedLabelRevoke("upwork")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("upwork")}
+                onClick={() => this.onUpworkIssue()} >
+                {this.getAcceptedLabelIssue("upwork")}
+            </Button>)
+        }
+    }
+    twitterbutton() {
+        if (!this.state.twitter.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onTwitterFeedback()} disabled={this.getDisabled("twitter")}>
+                {this.getInitialAcceptedLabel("twitter")}
+            </Button>)
+        } else if (!this.state.twitter.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("twitter")}
+                onClick={() => this.onTwitterRevoke()}>
+                {this.getAcceptedLabelRevoke("twitter")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("twitter")}
+                onClick={() => this.onTwitterIssue()} >
+                {this.getAcceptedLabelIssue("twitter")}
+            </Button>)
+        }
+    } 
+    
+    stackoverflowbutton() {
+        console.log("BIG EARS!!!!");
+        if (!this.state.stackoverflow.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onStackoverflowFeedback()} disabled={this.getDisabled("stackoverflow")}>
+                {this.getInitialAcceptedLabel("stackoverflow")}
+            </Button>)
+        } else if (!this.state.stackoverflow.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("stackoverflow")}
+                onClick={() => this.onStackoverflowRevoke()}>
+                {this.getAcceptedLabelRevoke("stackoverflow")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("stackoverflow")}
+                onClick={() => this.onStackoverflowIssue()} >
+                {this.getAcceptedLabelIssue("stackoverflow")}
+            </Button>)
+        }
+    } 
+    
+    facebookbutton() {
+        if (!this.state.facebook.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onFacebookFeedback()} disabled={this.getDisabled("facebook")}>
+                {this.getInitialAcceptedLabel("facebook")}
+            </Button>)
+        } else if (!this.state.facebook.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("facebook")}
+                onClick={() => this.onFacebookRevoke()}>
+                {this.getAcceptedLabelRevoke("facebook")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("facebook")}
+                onClick={() => this.onFacebookIssue()} >
+                {this.getAcceptedLabelIssue("facebook")}
+            </Button>)
+        }
+    } 
+    
+    linkedinbutton() {
+        if (!this.state.linkedin.qr_feedbackCollected) {
+            return (<Button className="registerbutton"
+                onClick={() => this.onLinkedinFeedback()} disabled={this.getDisabled("linkedin")}>
+                {this.getInitialAcceptedLabel("linkedin")}
+            </Button>)
+        } else if (!this.state.linkedin.has_been_revoked) {
+            return (<Button className="revokebutton" disabled={this.getDisabled("linkedin")}
+                onClick={() => this.onLinkedinRevoke()}>
+                {this.getAcceptedLabelRevoke("linkedin")}
+            </Button>)
+        } else {
+            return (<Button className="registerbutton" disabled={this.getDisabled("linkedin")}
+                onClick={() => this.onLinkedinIssue()} >
+                {this.getAcceptedLabelIssue("linkedin")}
             </Button>)
         }
     }
@@ -843,6 +1012,21 @@ export class App extends Component {
         }
     }
 
+    reloadUberUserDetails() {
+        const uber = JSON.parse(sessionStorage.getItem("uberUserData"));
+        console.log("uber = ", uber);
+        if (uber) {
+            this.setState(prevState => ({
+                uberuser: { ...prevState.uber, ...uber },
+                uber: {
+                    credential_accepted: true,
+                    has_been_revoked: true,
+                    qr_feedbackCollected: true
+                }
+            }));
+        }
+    }
+
     reloadEbayUserDetails() {
         const ebay = JSON.parse(sessionStorage.getItem("ebayUserData"));
         console.log("EBAY = ", ebay);
@@ -867,6 +1051,10 @@ export class App extends Component {
         this.reloadLoginDetails();
         this.reloadEtsyUserDetails();
         this.reloadEbayUserDetails();
+        this.reloadUberUserDetails();
+        if (sessionStorage.getItem("selectedTab")) {
+            this.setState({value: sessionStorage.getItem("selectedTab")})
+        }
     }
 
     handleChange = (event, newValue) => {
@@ -874,7 +1062,6 @@ export class App extends Component {
     };
 
     render() {
-
         let web = sessionStorage.getItem("waitingForEbayUserData");
         let wet = sessionStorage.getItem("waitingForEtsyUserData");
         if (web === "true") {
@@ -929,6 +1116,7 @@ export class App extends Component {
                             onChange={this.handleChange}
                             indicatorColor="primary"
                             textColor="primary"
+                            initialSelectedIndex="1"
                             centered
                         >
     
@@ -1022,7 +1210,7 @@ export class App extends Component {
                                 loading={this.state.stackoverflow.loading}
                                 card={this.state.stackoverflowuser}
                                 title={"Create your Stack Overflow Credential"}
-                                platform={"stachoverflow"}>
+                                platform={"stackoverflow"}>
                             </Form>
                         </TabPanel>
                         <TabPanel value={this.state.value} index={8}>

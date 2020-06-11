@@ -10,7 +10,7 @@ const NavBar = ({ parent }) => {
             <Toolbar style={{ backgroundColor: '#000000' }}>
                 <img style = {{maxHeight: '70px'}} src="capena.png" alt="logo" />
                 <Typography variant="h6">
-                    Capena - Delega: Credentials Issuer Demo
+                    Capena - Delega: Proxy Issuer Demo
                         </Typography>
                 <div style={{ flexGrow: 1 }}></div>
                 <Button style={{ color: 'white' }} onClick={() => parent.registerFormOpen(true)}>
