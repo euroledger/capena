@@ -293,6 +293,7 @@ export class App extends Component {
         this.setState(prevState => ({
             uber: { ...prevState.uber, credential_accepted: true, has_been_revoked: false }
         }));
+        sessionStorage.setItem("selectedTab", "4");
     }
 
     onEbayRevoke = async () => {
@@ -617,6 +618,8 @@ export class App extends Component {
         }));
         sessionStorage.setItem("waitingForEtsyUserData", "false");
         sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        sessionStorage.setItem("selectedTab", "1");
+        this.setState({value: 1});
     }
 
     ebayGetUserData = async () => {
@@ -646,6 +649,7 @@ export class App extends Component {
         window.stop();
         sessionStorage.setItem("waitingForEbayUserData", "false");
         sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
+        this.setState({value: 0});
     }
     etsyAuth = async () => {
         console.log("Going across to Etsy!...");
@@ -656,6 +660,9 @@ export class App extends Component {
             console.log(">>>>>>>>>>>>>> e = ", e);
         }
 
+        if (!res) {
+            return;
+        }
         console.log("res.data = ", res.data);
         sessionStorage.setItem("waitingForEtsyUserData", "true");
 
@@ -737,9 +744,9 @@ export class App extends Component {
                 },
                 uberuser: {
                     DriverID: 'Alice Richardson',
-                    Rating: "5",
+                    Rating: "4.87",
                     ActivationStatus: "Active",
-                    TripCount: "1796",
+                    TripCount: "19876",
                     ExpiryDate: this.formatDate(d)
                 }
             }));
@@ -1052,8 +1059,12 @@ export class App extends Component {
         this.reloadEtsyUserDetails();
         this.reloadEbayUserDetails();
         this.reloadUberUserDetails();
+        console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>> TAB = ", sessionStorage.getItem("selectedTab"));
         if (sessionStorage.getItem("selectedTab")) {
-            this.setState({value: sessionStorage.getItem("selectedTab")})
+            console.log("Setting selected tab to ",sessionStorage.getItem("selectedTab") )
+            this.setState({value: parseInt(sessionStorage.getItem("selectedTab"))})
+        } else {
+            console.log("No selected tab");
         }
     }
 

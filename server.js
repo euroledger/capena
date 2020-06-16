@@ -13,10 +13,18 @@ var fs = require('fs');
 var https = require('https');
 
 require('dotenv').config();
+// const { AgencyServiceClient, Credentials } = require("@streetcred.id/service-clients");
+
+// console.log("ACCESSTOK = ", process.env.ACCESSTOK);
+// const client = new AgencyServiceClient(new Credentials(process.env.ACCESSTOK, process.env.SUBKEY));
+
+// const router = express.Router();
 const { AgencyServiceClient, Credentials } = require("@streetcred.id/service-clients");
 
-console.log("ACCESSTOK = ", process.env.ACCESSTOK);
-const client = new AgencyServiceClient(new Credentials(process.env.ACCESSTOK, process.env.SUBKEY));
+const client = new AgencyServiceClient(
+    new Credentials(process.env.ACCESSTOK, process.env.SUBKEY),
+    { noRetryPolicy: true });
+
 
 var certOptions = {
     key: fs.readFileSync(path.resolve('./cert/server.key')),
@@ -56,6 +64,7 @@ app.post('/webhook', async function (req, res) {
             console.log("new connection notif, connection = ", req.body);
             try {
                 // use the connection contract to get the name for the front end to use
+                console.log("Calling getConnection with connection id", connectionId);
                 connectionContract = await getConnectionWithTimeout(connectionId);
                 console.log("--------------->NEW CONNECTION: ", connectionContract);
                 name = connectionContract.name;
@@ -91,11 +100,11 @@ app.post('/webhook', async function (req, res) {
             // if (connected) {
             if (platform === "ebay") {
                 ebayCredentialId = req.body.object_id;
-                console.log("Issuing credential to ledger, id = ", ebayCredentialId);
+                console.log("Issuing credential to wallet, id = ", ebayCredentialId);
                 await client.issueCredential(ebayCredentialId);
             } else {
                 etsyCredentialId = req.body.object_id;
-                console.log("Issuing credential to ledger, id = ", etsyCredentialId);
+                console.log("Issuing credential to wallet, id = ", etsyCredentialId);
                 await client.issueCredential(etsyCredentialId);
             }
             console.log("Credential Issue -> DONE");
@@ -163,7 +172,8 @@ app.post('/api/uber/issue', cors(), async function (req, res) {
                     "Driver Name": req.body["driver"],
                     "Driver Rating": req.body["rating"],
                     "Activation Status": req.body["status"],
-                    "Trip Count": req.body["tripcount"],                }
+                    "Trip Count": req.body["tripcount"],
+                }
             }
         }
         await client.createCredential(params);
@@ -347,24 +357,24 @@ app.post('/api/sendkeyverification', cors(), async function (req, res) {
     const params =
     {
         verificationPolicyParameters: {
-            "name": "ebay",
+            "policyId": "793f4f55-0acd-46a9-da8e-08d80d59a89a",
+            "name": "eBay Seller Proof",
             "version": "1.0",
             "attributes": [
-                {
-                    "policyName": "eBay Verification",
-                    "attributeNames": [
-                        "User Name",
-                        "Feedback Score",
-                        "Registration Date",
-                        "Negative Feedback Count",
-                        "Positive Feedback Count",
-                        "Positive Feedback Percent",
-                    ],
-                    "restrictions": null
-                }
+              {
+                "policyName": "eBay Seller Proof",
+                "attributeNames": [
+                  "Platform",
+                  "User Name",
+                  "Feedback Score",
+                  "Registration Date",
+                  "Negative Feedback Count",
+                  "Positive Feedback Count",
+                  "Positive Feedback Percent"
+                ]
+              }
             ],
-            "predicates": [],
-            "revocationRequirement": null
+            "predicates": []
         }
     }
     console.log("send verification request, connectionId = ", connectionId, "; params = ", params);
@@ -380,6 +390,13 @@ const getInvite = async (id) => {
                 multiParty: false
             }
         });
+        // const getInvite = async () => {
+        // try {
+        //   let result = await client.createConnection({ connectionInvitationParameters: {} });
+        // } catch (e) {
+        //   console.log(e.message || e.toString());
+        // }
+        //   }
         console.log(">>>>>>>>>>>> INVITE = ", result);
         return result;
     } catch (e) {
