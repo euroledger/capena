@@ -13,12 +13,7 @@ var fs = require('fs');
 var https = require('https');
 
 require('dotenv').config();
-// const { AgencyServiceClient, Credentials } = require("@streetcred.id/service-clients");
 
-// console.log("ACCESSTOK = ", process.env.ACCESSTOK);
-// const client = new AgencyServiceClient(new Credentials(process.env.ACCESSTOK, process.env.SUBKEY));
-
-// const router = express.Router();
 const { AgencyServiceClient, Credentials } = require("@streetcred.id/service-clients");
 
 const client = new AgencyServiceClient(
@@ -48,10 +43,12 @@ let ebayCredentialId;
 let etsyCredentialId
 let connectionId;
 let registered = false;
+let loginConfirmed = false;
 let credentialAccepted = false;
 let verificationAccepted = false;
 let platform;
 let name = '';
+let connectionAndCredentials;
 
 // WEBHOOK ENDPOINT
 app.post('/webhook', async function (req, res) {
@@ -87,7 +84,7 @@ app.post('/webhook', async function (req, res) {
                         'Last Name': param_obj["lastname"],
                         'Email Address': param_obj["email"],
                         'Country': param_obj["country"],
-                        'Passcode': param_obj["passcode"]
+                        'Capena Access Token': param_obj["passcode"]
                     }
                 }
             }
@@ -115,6 +112,60 @@ app.post('/webhook', async function (req, res) {
             console.log("cred verificatation notif");
             verificationAccepted = true;
             console.log(req.body);
+
+            console.log("Getting verification attributes with verification id of ", req.body.object_id);
+
+            let proof = await client.getVerification(req.body.object_id);
+
+            // const data = proof["proof"]["eBay Seller Proof"]["attributes"];
+
+            // TODO package this stuff up into platform-specific modules
+            console.log("Got it! proof data = ", proof["proof"]);
+
+            const connectionId = proof["proof"]["Login ID"]["attributes"]["Capena Access Token"];
+
+            console.log("CAT = ", connectionId);
+            // verify that the connection record exists for this id
+            let connectionContract;
+            try {
+                connectionContract = await getConnectionWithTimeout(connectionId);
+            } catch (e) {
+                console.log(e.message || e.toString());
+                res.status(500).send("connection record not found for id " + connectionId);
+            }
+
+            if (connectionContract) {
+                console.log("connectionContract = ", connectionContract);
+
+                console.log("---------------- GET ALL CREDENTIALS -------------------");
+
+                // retreive all credentials for this id
+                let credentials = await client.listCredentials();
+
+                var issuedCredentialsForThisUser = credentials.filter(function (credential) {
+                    return credential.state === "Issued" && credential.connectionId === connectionId;
+                });
+
+                console.log(issuedCredentialsForThisUser);
+
+                connectionAndCredentials = {
+                    connectionContract: connectionContract,
+                    credentials: issuedCredentialsForThisUser
+                }
+                // save the credential IDs of previously issued credentials -> these can be used for revocation
+                issuedCredentialsForThisUser.forEach(credential => {
+                    if (credential.values.Platform === "etsy") {
+                        etsyCredentialId = credential.credentialId;
+                    } else if (credential.values.Platform === "ebay") {
+                        ebayCredentialId = credential.credentialId;
+                    }
+                });
+                loginConfirmed = true;
+                // res.status(200).send(connectionAndCredentials);
+            } else {
+                console.log("connection record not found for id ", connectionId);
+                res.status(500);
+            }
         } else {
             console.log("WEBHOOK message_type = ", req.body.message_type);
             console.log("body = ", req.body);
@@ -124,6 +175,7 @@ app.post('/webhook', async function (req, res) {
         console.log("/webhook error: ", e.message || e.toString());
     }
 });
+
 
 //FRONTEND ENDPOINTS
 
@@ -234,50 +286,23 @@ async function getConnectionWithTimeout(connectionId) {
 
 
 app.post('/api/login', cors(), async function (req, res) {
-    console.log("Retrieving connection record for id ", req.body);
-    connectionId = req.body.passcode;
+    // send connectionless proof request for user registration details
 
-    // verify that the connection record exists for this id
-    let connectionContract;
-    try {
-        connectionContract = await getConnectionWithTimeout(connectionId);
-    } catch (e) {
-        console.log(e.message || e.toString());
-        res.status(500).send("connection record not found for id " + connectionId);
-    }
+    const policyId = process.env.LOGIN_VERIF_ID;
+    const resp = await client.createVerificationFromPolicy(policyId);
 
-    if (connectionContract) {
-        console.log("connectionContract = ", connectionContract);
+    console.log("resp = ", resp);
 
-        console.log("---------------- GET ALL CREDENTIALS -------------------");
+    res.status(200).send({ login_request_url: resp.verificationRequestUrl });
 
-        // retreive all credentials for this id
-        let credentials = await client.listCredentials();
-
-        var issuedCredentialsForThisUser = credentials.filter(function (credential) {
-            return credential.state === "Issued" && credential.connectionId === connectionId;
-        });
-
-        console.log(issuedCredentialsForThisUser);
-
-        const connectionAndCredentials = {
-            connectionContract: connectionContract,
-            credentials: issuedCredentialsForThisUser
-        }
-        // save the credential IDs of previously issued credentials -> these can be used for revocation
-        issuedCredentialsForThisUser.forEach(credential => {
-            if (credential.values.Platform === "etsy") {
-                etsyCredentialId = credential.credentialId;
-            } else if (credential.values.Platform === "ebay") {
-                ebayCredentialId = credential.credentialId;
-            }
-        });
-        res.status(200).send(connectionAndCredentials);
-    } else {
-        console.log("connection record not found for id ", connectionId);
-        res.status(500);
-    }
 });
+
+app.get('/api/loginconfirmed', cors(), async function (req, res) {
+    console.log("Waiting for login confirmation...");
+    await utils.until(_ => loginConfirmed === true);
+    res.status(200).send(connectionAndCredentials);
+});
+
 
 app.post('/api/register', cors(), async function (req, res) {
     console.log("Getting invite...")
@@ -361,18 +386,18 @@ app.post('/api/sendkeyverification', cors(), async function (req, res) {
             "name": "eBay Seller Proof",
             "version": "1.0",
             "attributes": [
-              {
-                "policyName": "eBay Seller Proof",
-                "attributeNames": [
-                  "Platform",
-                  "User Name",
-                  "Feedback Score",
-                  "Registration Date",
-                  "Negative Feedback Count",
-                  "Positive Feedback Count",
-                  "Positive Feedback Percent"
-                ]
-              }
+                {
+                    "policyName": "eBay Seller Proof",
+                    "attributeNames": [
+                        "Platform",
+                        "User Name",
+                        "Feedback Score",
+                        "Registration Date",
+                        "Negative Feedback Count",
+                        "Positive Feedback Count",
+                        "Positive Feedback Percent"
+                    ]
+                }
             ],
             "predicates": []
         }

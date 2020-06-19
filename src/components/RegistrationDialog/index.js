@@ -24,7 +24,6 @@ const RegistrationDialog = ({ form_open, parent, registerFormOpen, setQRFormOpen
 
     const setFieldValue = (event) => {
         const { target: { name, value } } = event;
-        console.log("name = ", name, "value= ", value);
         setFormState({ ...form, [name]: value });
     }
 

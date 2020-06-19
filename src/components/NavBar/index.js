@@ -5,6 +5,15 @@ import Typography from "@material-ui/core/es/Typography/Typography";
 import Button from '@material-ui/core/Button';
 
 const NavBar = ({ parent }) => {
+    
+    const clickHandler = () => {
+        if (parent.state.login === true) {
+            parent.logout()
+        } else {
+            parent.postLogin()
+        }
+    }
+
     return (
         <AppBar position="static">
             <Toolbar style={{ backgroundColor: '#000000' }}>
@@ -14,9 +23,9 @@ const NavBar = ({ parent }) => {
                         </Typography>
                 <div style={{ flexGrow: 1 }}></div>
                 <Button style={{ color: 'white' }} onClick={() => parent.registerFormOpen(true)}>
-                    Register
+                    {parent.getRegisterLabel()}
                         </Button>
-                <Button style={{ color: 'white' }} onClick={() => parent.loginFormOpen(true)}>
+                <Button style={{ color: 'white' }} onClick={() => clickHandler()}>
                     {parent.getLoginLabel()}
                 </Button>
             </Toolbar>

@@ -7,7 +7,6 @@ import Spinner from '../Spinner';
 
 const Form = ({ parent, items, loading, card, title, platform }) => {
     const getButton = () => {
-        console.log("---------------------------------------- platform = ", platform)
         if (platform === "stackoverflow") {
             return parent.stackoverflowbutton();
         } else if (platform === "ebay") {

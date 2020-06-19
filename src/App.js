@@ -24,6 +24,8 @@ import Dialog from '@material-ui/core/Dialog';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import axios from 'axios';
 import QRcode from 'qrcode.react';
+import crypto from 'crypto';
+
 
 axios.defaults.baseURL = 'https://localhost:3002/';
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
@@ -39,168 +41,174 @@ const muiTheme = createMuiTheme({
         "fontWeightMedium": 500
     }
 });
-
+const initState = {
+    user: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    etsyuser: {
+        UserID: "",
+        FeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        RegistrationDate: "",
+        ExpiryDate: ""
+    },
+    uberuser: {
+        DriverID: "",
+        Rating: "",
+        ActivationStatus: "",
+        TripCount: "",
+        ExpiryDate: ""
+    },
+    amazonuser: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    facebookuser: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    linkedinuser: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    stackoverflowuser: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    twitteruser: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    upworkuser: {
+        UserID: "",
+        FeedbackScore: "",
+        RegistrationDate: "",
+        UniqueNegativeFeedbackCount: "",
+        UniquePositiveFeedbackCount: "",
+        PositiveFeedbackPercent: "",
+        ExpiryDate: ""
+    },
+    qr_open: false,
+    qr_hasClosed: false,
+    qr_placeholder: "",
+    invite_url: "",
+    login_url: "",
+    registering: false,
+    loggingIn: false,
+    ebay: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    etsy: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    uber: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    amazon: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    facebook: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    linkedin: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    stackoverflow: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    twitter: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    upwork: {
+        qr_feedbackCollected: false,
+        credential_accepted: true,
+        verification_accepted: true,
+        has_been_revoked: true,
+        loading: false,
+    },
+    register: false,
+    register_form_open: false,
+    login: sessionStorage.getItem("login") === "true" ? true : false,
+    // login_form_open: false,
+    firstname: '',
+    lastname: '',
+    email: '',
+    connection_name: sessionStorage.getItem("name"),
+    country: '',
+    collapse_open: false,
+    login_loading: false,
+    userData: {},
+    value: 0
+};
 export class App extends Component {
 
-    state = {
-        user: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        etsyuser: {
-            UserID: "",
-            FeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            RegistrationDate: "",
-            ExpiryDate: ""
-        },
-        uberuser: {
-            DriverID: "",
-            Rating: "",
-            ActivationStatus: "",
-            TripCount: "",
-            ExpiryDate: ""
-        },
-        amazonuser: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        facebookuser: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        linkedinuser: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        stackoverflowuser: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        twitteruser: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        upworkuser: {
-            UserID: "",
-            FeedbackScore: "",
-            RegistrationDate: "",
-            UniqueNegativeFeedbackCount: "",
-            UniquePositiveFeedbackCount: "",
-            PositiveFeedbackPercent: "",
-            ExpiryDate: ""
-        },
-        qr_open: false,
-        qr_hasClosed: false,
-        qr_placeholder: "",
-        invite_url: "",
-        ebay: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        etsy: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        uber: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        amazon: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        facebook: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        linkedin: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        stackoverflow: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        twitter: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        upwork: {
-            qr_feedbackCollected: false,
-            credential_accepted: true,
-            verification_accepted: true,
-            has_been_revoked: true,
-            loading: false,
-        },
-        register: true,
-        register_form_open: false,
-        login: sessionStorage.getItem("login") === "true" ? true : false,
-        login_form_open: false,
-        firstname: '',
-        lastname: '',
-        email: '',
-        connection_name: sessionStorage.getItem("name"),
-        country: '',
-        collapse_open: false,
-        login_loading: false,
-        userData: {},
-        value: 0
-    };
+    constructor(props) {
+        super(props);
+        this.state = initState;
+    }
 
     setCollapseClosed() {
         this.setState({
@@ -461,8 +469,8 @@ export class App extends Component {
         }
     }
 
-       // load credentials from those previously issued 
-       loadUberCredentials = (credentials) => {
+    // load credentials from those previously issued 
+    loadUberCredentials = (credentials) => {
         const uberValues = credentials.filter(function (credential) {
             return credential.values.Platform === "uber";
         });
@@ -491,36 +499,54 @@ export class App extends Component {
         }
     }
 
-    postLogin = async (code) => {
+    logout = () => {
+        // reset all forms, reset component state, 
+        console.log("Logging out...");
+        this.setState(initState);
+    }
 
+    postLogin = async () => {
+        console.log("GOING TO LOG IN...")
         this.setState({
-            login_loading: true
+            login_loading: true, loggingIn: true
         });
-        const loginInfo = { passcode: code };
+        // const loginInfo = { passcode: code };
         let resp;
         try {
-            resp = await axios.post('/api/login', loginInfo);
+            resp = await axios.post('/api/login', null);
         }
         catch (e) {
             console.log(e);
         }
 
         this.setState({
-            login_loading: false
+            login_loading: false,
+            // login_form_open: false
         });
-        if (resp && resp.status === 200) {
-            console.log("Connection  = ", resp.data);
-            const name = resp.data.connectionContract.name;
+        // this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + resp.data.login_request_url });
+
+        this.setState({ invite_url: resp.data.login_request_url });
+
+        this.setQRFormOpen(true);
+
+        console.log("WAITING FOR LOGIN DATA...")
+        const login = await axios.get('/api/loginconfirmed');
+
+        this.setQRFormOpen(false);
+
+        if (login && login.status === 200) {
+            console.log("Connection  = ", login.data);
+            const name = login.data.connectionContract.name;
             this.setState({
-                login: true, connection_name: name, login_form_open: false
+                login: true, connection_name: name, register: true, loggingIn: false
             });
             sessionStorage.setItem("name", name);
             sessionStorage.setItem("login", true);
 
             // push the credentials back in to the forms for the correct platforms
-            this.loadEbayCredentials(resp.data.credentials);
-            this.loadEtsyCredentials(resp.data.credentials);
-            this.loadUberCredentials(resp.data.credentials);
+            this.loadEbayCredentials(login.data.credentials);
+            this.loadEtsyCredentials(login.data.credentials);
+            this.loadUberCredentials(login.data.credentials);
         } else {
             console.log("no connection found");
             this.setState({
@@ -530,13 +556,16 @@ export class App extends Component {
     }
 
     postRegister = async (form) => {
-        const passcode = Math.floor(Math.random() * 900000) + 100000;
+        // const passcode = Math.floor(Math.random() * 900000) + 100000;
+
+        const passcode = crypto.randomBytes(20).toString('hex');
+
         const registrationInfo = {
             firstname: form.firstname,
             lastname: form.lastname,
             email: form.email,
             country: form.country,
-            passcode: passcode.toString()
+            passcode: passcode
         }
         console.log(registrationInfo);
         const response = await axios.post('/api/register', registrationInfo);
@@ -559,15 +588,17 @@ export class App extends Component {
         this.setState(prevState => ({
             qr_open: false,
             login: true,
+            register: true,
+            registering: false,
             ebay: { ...prevState.ebay, credential_accepted: true },
             etsy: { ...prevState.etsy, credential_accepted: true }
         }));
-        this.setState({ login: true });
     }
 
     registerFormOpen = (open) => {
         this.setState({
-            register_form_open: open
+            register_form_open: open,
+            registering: true
         });
     }
 
@@ -619,7 +650,7 @@ export class App extends Component {
         sessionStorage.setItem("waitingForEtsyUserData", "false");
         sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
         sessionStorage.setItem("selectedTab", "1");
-        this.setState({value: 1});
+        this.setState({ value: 1 });
     }
 
     ebayGetUserData = async () => {
@@ -649,7 +680,7 @@ export class App extends Component {
         window.stop();
         sessionStorage.setItem("waitingForEbayUserData", "false");
         sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
-        this.setState({value: 0});
+        this.setState({ value: 0 });
     }
     etsyAuth = async () => {
         console.log("Going across to Etsy!...");
@@ -880,10 +911,9 @@ export class App extends Component {
                 {this.getAcceptedLabelIssue("twitter")}
             </Button>)
         }
-    } 
-    
+    }
+
     stackoverflowbutton() {
-        console.log("BIG EARS!!!!");
         if (!this.state.stackoverflow.qr_feedbackCollected) {
             return (<Button className="registerbutton"
                 onClick={() => this.onStackoverflowFeedback()} disabled={this.getDisabled("stackoverflow")}>
@@ -900,8 +930,8 @@ export class App extends Component {
                 {this.getAcceptedLabelIssue("stackoverflow")}
             </Button>)
         }
-    } 
-    
+    }
+
     facebookbutton() {
         if (!this.state.facebook.qr_feedbackCollected) {
             return (<Button className="registerbutton"
@@ -919,8 +949,8 @@ export class App extends Component {
                 {this.getAcceptedLabelIssue("facebook")}
             </Button>)
         }
-    } 
-    
+    }
+
     linkedinbutton() {
         if (!this.state.linkedin.qr_feedbackCollected) {
             return (<Button className="registerbutton"
@@ -974,7 +1004,7 @@ export class App extends Component {
     }
 
     getQRCodeLabel() {
-        return this.state.register ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
+        return this.state.registering ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
     }
 
     handleLoginClose() {
@@ -1051,7 +1081,11 @@ export class App extends Component {
     }
 
     getLoginLabel() {
-        return this.state.login ? this.state.connection_name : "Login"
+        return this.state.login ? "Sign Out" : "Login"
+    }
+
+    getRegisterLabel() {
+        return this.state.register ? this.state.connection_name : "Register"
     }
 
     componentDidMount() {
@@ -1061,8 +1095,8 @@ export class App extends Component {
         this.reloadUberUserDetails();
         console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>> TAB = ", sessionStorage.getItem("selectedTab"));
         if (sessionStorage.getItem("selectedTab")) {
-            console.log("Setting selected tab to ",sessionStorage.getItem("selectedTab") )
-            this.setState({value: parseInt(sessionStorage.getItem("selectedTab"))})
+            console.log("Setting selected tab to ", sessionStorage.getItem("selectedTab"))
+            this.setState({ value: parseInt(sessionStorage.getItem("selectedTab")) })
         } else {
             console.log("No selected tab");
         }
@@ -1073,6 +1107,7 @@ export class App extends Component {
     };
 
     render() {
+
         let web = sessionStorage.getItem("waitingForEbayUserData");
         let wet = sessionStorage.getItem("waitingForEtsyUserData");
         if (web === "true") {
@@ -1130,7 +1165,7 @@ export class App extends Component {
                             initialSelectedIndex="1"
                             centered
                         >
-    
+
                             <Tab icon={<img style={{ height: '60px', width: '60px' }} alt="" src="ebay.png" />} {...a11yProps(0)} />
                             <Tab icon={<img style={{ height: '21px', width: '51px', marginTop: '-10px' }} alt="" src="etsy.png" />}{...a11yProps(1)} />
                             <Tab icon={<img style={{ height: '56px', width: '61px', marginTop: '-29px' }} alt="" src="upwork2.png" />} {...a11yProps(2)} />
@@ -1142,7 +1177,7 @@ export class App extends Component {
                             <Tab icon={<img style={{ height: '58px', width: '61px', marginTop: '-10px' }} alt="" src="linkedin.png" />} {...a11yProps(6)} />
                             <Tab icon={<img style={{ height: '32px', width: '79px', marginTop: '-19px' }} alt="" src="stackoverflow.png" />} {...a11yProps(7)} />
                             <Tab icon={<img style={{ height: '20px', width: '85px', marginTop: '-10px' }} alt="" src="twitter4.png" />} {...a11yProps(8)} />
-                           
+
                         </Tabs>
                         <TabPanel value={this.state.value} index={0}>
                             <Form
@@ -1234,14 +1269,14 @@ export class App extends Component {
                                 platform={"twitter"}>
                             </ Form>
                         </TabPanel>
-                      
+
                     </Paper>
-                    <LoginDialog
+                    {/* <LoginDialog
                         form_open={this.state.login_form_open}
                         parent={this}
                         collapse_open={this.state.collapse_open}
                         login_loading={this.state.login_loading}>
-                    </LoginDialog>
+                    </LoginDialog> */}
                     <RegistrationDialog
                         form_open={this.state.register_form_open}
                         parent={this}>
