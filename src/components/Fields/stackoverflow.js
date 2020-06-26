@@ -30,8 +30,8 @@ const stackoverflowItems = [
         disabled: false
     },
     {
-        id: "ExpiryDate",
-        label: "Credential Expiry Date",
+        id: "CreationDate",
+        label: "Credential Issue Date",
         disabled: true
     }
 ];

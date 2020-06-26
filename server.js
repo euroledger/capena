@@ -40,7 +40,8 @@ app.get('/', function (req, res) {
 });
 
 let ebayCredentialId;
-let etsyCredentialId
+let etsyCredentialId;
+let uberCredentialId;
 let connectionId;
 let registered = false;
 let loginConfirmed = false;
@@ -99,10 +100,14 @@ app.post('/webhook', async function (req, res) {
                 ebayCredentialId = req.body.object_id;
                 console.log("Issuing credential to wallet, id = ", ebayCredentialId);
                 await client.issueCredential(ebayCredentialId);
-            } else {
+            } else if (platform === "etsy") {
                 etsyCredentialId = req.body.object_id;
                 console.log("Issuing credential to wallet, id = ", etsyCredentialId);
                 await client.issueCredential(etsyCredentialId);
+            } else if (platform === "uber") {
+                uberCredentialId = req.body.object_id;
+                console.log("Issuing credential to wallet, id = ", uberCredentialId);
+                await client.issueCredential(uberCredentialId);
             }
             console.log("Credential Issue -> DONE");
             credentialAccepted = true;
@@ -120,11 +125,10 @@ app.post('/webhook', async function (req, res) {
             // const data = proof["proof"]["eBay Seller Proof"]["attributes"];
 
             // TODO package this stuff up into platform-specific modules
-            console.log("Got it! proof data = ", proof["proof"]);
+            console.log("Proof received; proof data = ", proof["proof"]);
 
-            const connectionId = proof["proof"]["Login ID"]["attributes"]["Capena Access Token"];
+            connectionId = proof["proof"]["Login Verification"]["attributes"]["Capena Access Token"];
 
-            console.log("CAT = ", connectionId);
             // verify that the connection record exists for this id
             let connectionContract;
             try {
@@ -157,7 +161,11 @@ app.post('/webhook', async function (req, res) {
                     if (credential.values.Platform === "etsy") {
                         etsyCredentialId = credential.credentialId;
                     } else if (credential.values.Platform === "ebay") {
+                        console.log("-> Setting ebayCredentialId to ", credential.credentialId);
                         ebayCredentialId = credential.credentialId;
+                    } else if (credential.values.Platform === "uber") {
+                        console.log("-> Setting uberCredentialId to ", credential.credentialId);
+                        uberCredentialId = credential.credentialId;
                     }
                 });
                 loginConfirmed = true;
@@ -179,11 +187,12 @@ app.post('/webhook', async function (req, res) {
 
 //FRONTEND ENDPOINTS
 
-app.post('/api/issue', cors(), async function (req, res) {
+app.post('/api/ebay/issue', cors(), async function (req, res) {
     platform = "ebay";
-    console.log("IN /api/issue");
+    console.log("IN /api/ebay/issue");
     if (connectionId) {
-        console.log("issue credential with connection id " + connectionId + " params = ", req.body);
+     
+        const d = new Date();
         var params =
         {
             credentialOfferParameters: {
@@ -197,9 +206,11 @@ app.post('/api/issue', cors(), async function (req, res) {
                     "Negative Feedback Count": req.body["negfeedbackcount"],
                     "Positive Feedback Count": req.body["posfeedbackcount"],
                     "Positive Feedback Percent": req.body["posfeedbackpercent"],
+                    "Created At": d.toISOString()
                 }
             }
         }
+        console.log("issue credential with connection id " + connectionId + " params = ", params);
         await client.createCredential(params);
         console.log("----------------------> CREDENTIAL CREATED!");
         res.status(200).send();
@@ -209,11 +220,12 @@ app.post('/api/issue', cors(), async function (req, res) {
 });
 
 
+
 app.post('/api/uber/issue', cors(), async function (req, res) {
     console.log("IN /api/uber/issue");
     platform = "uber";
     if (connectionId) {
-        console.log("issue credential with connection id " + connectionId + " params = ", req.body);
+        const d = new Date();
         var params =
         {
             credentialOfferParameters: {
@@ -225,9 +237,11 @@ app.post('/api/uber/issue', cors(), async function (req, res) {
                     "Driver Rating": req.body["rating"],
                     "Activation Status": req.body["status"],
                     "Trip Count": req.body["tripcount"],
+                    "Created At": d.toISOString()
                 }
             }
         }
+        console.log("issue UBER credential with connection id " + connectionId + " params = ", params);
         await client.createCredential(params);
         console.log("----------------------> CREDENTIAL CREATED!");
         res.status(200).send();
@@ -240,7 +254,7 @@ app.post('/api/etsy/issue', cors(), async function (req, res) {
     console.log("IN /api/etsy/issue");
     platform = "etsy";
     if (connectionId) {
-        console.log("issue credential with connection id " + connectionId + " params = ", req.body);
+        const d = new Date();
         var params =
         {
             credentialOfferParameters: {
@@ -249,12 +263,14 @@ app.post('/api/etsy/issue', cors(), async function (req, res) {
                 credentialValues: {
                     "Platform": "etsy",
                     "User Name": req.body["name"],
-                    "Feedback Count": req.body["feedbackcount"],
+                    "Feedback Score": req.body["feedbackcount"],
                     "Registration Date": req.body["registrationdate"],
                     "Positive Feedback Percent": req.body["posfeedbackpercent"],
+                    "Created At": d.toISOString()
                 }
             }
         }
+        console.log("issue ETSY credential with connection id " + connectionId + " params = ", params);
         await client.createCredential(params);
         console.log("----------------------> CREDENTIAL CREATED!");
         res.status(200).send();
@@ -294,7 +310,6 @@ app.post('/api/login', cors(), async function (req, res) {
     console.log("resp = ", resp);
 
     res.status(200).send({ login_request_url: resp.verificationRequestUrl });
-
 });
 
 app.get('/api/loginconfirmed', cors(), async function (req, res) {
@@ -319,6 +334,7 @@ app.post('/api/ebay/revoke', cors(), async function (req, res) {
     await client.revokeCredential(ebayCredentialId);
     console.log("EBAY Credential revoked!");
 
+    console.log("++++ SEND MESSAGE WITH CONNECTION ID ", connectionId);
     const params =
     {
         basicMessageParameters: {
@@ -351,7 +367,25 @@ app.post('/api/etsy/revoke', cors(), async function (req, res) {
     res.status(200).send();
 });
 
-app.post('/api/connected', cors(), async function (req, res) {
+app.post('/api/uber/revoke', cors(), async function (req, res) {
+    console.log("revoking credential, id = ", uberCredentialId);
+    await client.revokeCredential(uberCredentialId);
+    console.log("UBER Credential revoked!");
+
+    const params =
+    {
+        basicMessageParameters: {
+            "connectionId": connectionId,
+            "text": "Uber credential has been revoked. You may want to delete this from your wallet."
+        }
+    };
+    const resp = await client.sendMessage(params);
+
+    console.log("------- Message sent to user's agent !");
+    res.status(200).send();
+});
+
+app.get('/api/connected', cors(), async function (req, res) {
     console.log("Waiting for connection...");
     await utils.until(_ => registered === true);
     res.status(200).send(name);
@@ -365,47 +399,7 @@ app.post('/api/credential_accepted', cors(), async function (req, res) {
     res.status(200).send();
 });
 
-app.post('/api/verification_accepted', cors(), async function (req, res) {
-    console.log("Waiting for proof request (verification) to be accepted...");
-    await utils.until(_ => verificationAccepted === true);
-    verificationAccepted = false;
-    res.status(200).send();
-});
 
-
-
-app.post('/api/sendkeyverification', cors(), async function (req, res) {
-
-    // need to call client.sendVerificationFromParameters
-    // use VerificationPolicyParameters for params
-
-    const params =
-    {
-        verificationPolicyParameters: {
-            "policyId": "793f4f55-0acd-46a9-da8e-08d80d59a89a",
-            "name": "eBay Seller Proof",
-            "version": "1.0",
-            "attributes": [
-                {
-                    "policyName": "eBay Seller Proof",
-                    "attributeNames": [
-                        "Platform",
-                        "User Name",
-                        "Feedback Score",
-                        "Registration Date",
-                        "Negative Feedback Count",
-                        "Positive Feedback Count",
-                        "Positive Feedback Percent"
-                    ]
-                }
-            ],
-            "predicates": []
-        }
-    }
-    console.log("send verification request, connectionId = ", connectionId, "; params = ", params);
-    const resp = await client.sendVerificationFromParameters(connectionId, params);
-    res.status(200).send();
-});
 
 const getInvite = async (id) => {
     try {

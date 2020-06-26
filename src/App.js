@@ -49,21 +49,21 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     etsyuser: {
         UserID: "",
         FeedbackCount: "",
         PositiveFeedbackPercent: "",
         RegistrationDate: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     uberuser: {
         DriverID: "",
         Rating: "",
         ActivationStatus: "",
         TripCount: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     amazonuser: {
         UserID: "",
@@ -72,7 +72,7 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     facebookuser: {
         UserID: "",
@@ -81,7 +81,7 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     linkedinuser: {
         UserID: "",
@@ -90,7 +90,7 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     stackoverflowuser: {
         UserID: "",
@@ -99,7 +99,7 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     twitteruser: {
         UserID: "",
@@ -108,7 +108,7 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     upworkuser: {
         UserID: "",
@@ -117,7 +117,7 @@ const initState = {
         UniqueNegativeFeedbackCount: "",
         UniquePositiveFeedbackCount: "",
         PositiveFeedbackPercent: "",
-        ExpiryDate: ""
+        CreationDate: ""
     },
     qr_open: false,
     qr_hasClosed: false,
@@ -191,7 +191,7 @@ const initState = {
     },
     register: false,
     register_form_open: false,
-    login: sessionStorage.getItem("login") === "true" ? true : false,
+    login: false,
     // login_form_open: false,
     firstname: '',
     lastname: '',
@@ -245,16 +245,19 @@ export class App extends Component {
             registrationdate: this.state.user.RegistrationDate,
             negfeedbackcount: this.state.user.UniqueNegativeFeedbackCount.toString(),
             posfeedbackcount: this.state.user.UniquePositiveFeedbackCount.toString(),
-            posfeedbackpercent: this.state.user.PositiveFeedbackPercent.toString()
+            posfeedbackpercent: this.state.user.PositiveFeedbackPercent.toString(),
+            createdat: this.state.user.CreationDate.toString()
         }
 
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, credential_accepted: false }
         }));
 
-        await axios.post('/api/issue', ebayDSR);
+        await axios.post('/api/ebay/issue', ebayDSR);
 
         await axios.post('/api/credential_accepted', null);
+
+        console.log("CREDENTIAL ACCEPTED!!!");
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, credential_accepted: true, has_been_revoked: false }
         }));
@@ -266,7 +269,8 @@ export class App extends Component {
             name: this.state.etsyuser.UserID,
             feedbackcount: this.state.etsyuser.FeedbackCount.toString(),
             posfeedbackpercent: this.state.etsyuser.PositiveFeedbackPercent.toString(),
-            registrationdate: this.state.etsyuser.RegistrationDate
+            registrationdate: this.state.etsyuser.RegistrationDate,
+            createdat: this.state.user.CreationDate.toString()
         }
 
         this.setState(prevState => ({
@@ -287,7 +291,8 @@ export class App extends Component {
             driver: this.state.uberuser.DriverID,
             rating: this.state.uberuser.Rating.toString(),
             status: this.state.uberuser.ActivationStatus.toString(),
-            tripcount: this.state.uberuser.TripCount
+            tripcount: this.state.uberuser.TripCount,
+            createdat: this.state.user.CreationDate.toString()
         }
 
         this.setState(prevState => ({
@@ -321,7 +326,7 @@ export class App extends Component {
                 UniqueNegativeFeedbackCount: "",
                 UniquePositiveFeedbackCount: "",
                 PositiveFeedbackPercent: "",
-                ExpiryDate: ""
+                CreationDate: ""
             }
         }));
         sessionStorage.setItem("ebayUserData", null);
@@ -342,7 +347,7 @@ export class App extends Component {
                 FeedbackCount: "",
                 PositiveFeedbackPercent: "",
                 RegistrationDate: "",
-                ExpiryDate: ""
+                CreationDate: ""
             }
         }));
         sessionStorage.setItem("etsyUserData", null);
@@ -364,7 +369,7 @@ export class App extends Component {
                 Rating: "",
                 ActivationStatus: "",
                 TripCount: "",
-                ExpiryDate: ""
+                CreationDate: ""
             }
         }));
         sessionStorage.setItem("uberUserData", null);
@@ -378,7 +383,7 @@ export class App extends Component {
         }));
         console.log("Verifying credentials...");
         await axios.post('/api/sendkeyverification', null);
-        await axios.post('/api/verification_accepted', null);
+        await axios.get('/api/verification_accepted', null);
 
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, verification_accepted: true, has_been_revoked: false }
@@ -416,7 +421,7 @@ export class App extends Component {
             ebayFields = ebayValues[ebayValues.length - 1].values;
             creationDate = ebayValues[ebayValues.length - 1].issuedAtUtc;
             var d = new Date(creationDate);
-            d.setMonth(d.getMonth() + 1);
+            // d.setMonth(d.getMonth() + 1);
             this.setState(prevState => ({
                 ebay: {
                     ...prevState.ebay, qr_feedbackCollected: true,
@@ -430,7 +435,7 @@ export class App extends Component {
                     UniqueNegativeFeedbackCount: ebayFields["Negative Feedback Count"],
                     UniquePositiveFeedbackCount: ebayFields["Positive Feedback Count"],
                     PositiveFeedbackPercent: ebayFields["Positive Feedback Percent"],
-                    ExpiryDate: this.formatDate(d)
+                    CreationDate: this.formatDate(d)
                 }
             }));
             sessionStorage.setItem("waitingForEbayUserData", "false");
@@ -449,7 +454,7 @@ export class App extends Component {
             etsyFields = etsyValues[etsyValues.length - 1].values;
             creationDate = etsyValues[etsyValues.length - 1].issuedAtUtc;
             var d = new Date(creationDate);
-            d.setMonth(d.getMonth() + 1);
+            // d.setMonth(d.getMonth() + 1);
             this.setState(prevState => ({
                 etsy: {
                     ...prevState.etsy, qr_feedbackCollected: true,
@@ -461,7 +466,7 @@ export class App extends Component {
                     FeedbackCount: etsyFields["Feedback Count"],
                     RegistrationDate: etsyFields["Registration Date"],
                     PositiveFeedbackPercent: etsyFields["Positive Feedback Percent"],
-                    ExpiryDate: this.formatDate(new Date(d))
+                    CreationDate: this.formatDate(new Date(d))
                 }
             }));
             sessionStorage.setItem("waitingForEtsyUserData", "false");
@@ -480,7 +485,7 @@ export class App extends Component {
             uberFields = uberValues[uberValues.length - 1].values;
             creationDate = uberValues[uberValues.length - 1].issuedAtUtc;
             var d = new Date(creationDate);
-            d.setMonth(d.getMonth() + 1);
+            // d.setMonth(d.getMonth() + 1);
             this.setState(prevState => ({
                 uber: {
                     ...prevState.uber, qr_feedbackCollected: true,
@@ -492,7 +497,7 @@ export class App extends Component {
                     Rating: uberFields["Driver Rating"],
                     ActivationStatus: uberFields["Activation Status"],
                     TripCount: uberFields["Trip Count"],
-                    ExpiryDate: this.formatDate(new Date(d))
+                    CreationDate: this.formatDate(new Date(d))
                 }
             }));
             sessionStorage.setItem("uberUserData", JSON.stringify(this.state.uberuser));
@@ -537,6 +542,8 @@ export class App extends Component {
         if (login && login.status === 200) {
             console.log("Connection  = ", login.data);
             const name = login.data.connectionContract.name;
+
+            console.log("QUACK >>> login name = ", name);
             this.setState({
                 login: true, connection_name: name, register: true, loggingIn: false
             });
@@ -572,7 +579,7 @@ export class App extends Component {
         console.log(response);
         this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
 
-        const resp = await axios.post('/api/connected', null);
+        const resp = await axios.get('/api/connected', null);
         this.setState(prevState => ({
             login: true,
             connection_name: resp.data,
@@ -604,13 +611,13 @@ export class App extends Component {
 
     loginFormOpen = (open) => {
         this.setState({
-            login_form_open: open
+            login_formi_open: open
         });
     }
 
     formatDate = (date) => {
         var d = new Date(date),
-            month = '' + (d.getMonth() + 1),
+            month = '' + (d.getMonth() + 1), // add 1 as January = 0
             day = '' + d.getDate(),
             year = d.getFullYear();
 
@@ -644,7 +651,7 @@ export class App extends Component {
                 FeedbackCount: count,
                 RegistrationDate: this.formatDate(new Date(user.data.creation_tsz * 1000)),
                 PositiveFeedbackPercent: score,
-                ExpiryDate: this.formatDate(d)
+                CreationDate: this.formatDate(d)
             }
         }));
         sessionStorage.setItem("waitingForEtsyUserData", "false");
@@ -673,7 +680,7 @@ export class App extends Component {
                 UniqueNegativeFeedbackCount: user.data.UniqueNegativeFeedbackCount,
                 UniquePositiveFeedbackCount: user.data.UniquePositiveFeedbackCount,
                 PositiveFeedbackPercent: user.data.PositiveFeedbackPercent,
-                ExpiryDate: this.formatDate(d)
+                CreationDate: this.formatDate(d)
             }
         }));
 
@@ -750,7 +757,7 @@ export class App extends Component {
                     UniqueNegativeFeedbackCount: "0",
                     UniquePositiveFeedbackCount: "0",
                     PositiveFeedbackPercent: "0",
-                    ExpiryDate: this.formatDate(d)
+                    CreationDate: this.formatDate(d)
                 }
             }));
         }, 3000);
@@ -778,7 +785,7 @@ export class App extends Component {
                     Rating: "4.87",
                     ActivationStatus: "Active",
                     TripCount: "19876",
-                    ExpiryDate: this.formatDate(d)
+                    CreationDate: this.formatDate(d)
                 }
             }));
         }, 3000);
@@ -795,7 +802,7 @@ export class App extends Component {
     }
 
     getInitialAcceptedLabel(platform) {
-        return (this.state[platform].credential_accepted ? `Import User Credentials from ${platform}` : "Awaiting Acceptance...");
+        return (this.state[platform].credential_accepted ? `Import User Reputation Data from ${platform}` : "Awaiting Acceptance...");
     }
 
     getAcceptedLabelRevoke(platform) {
@@ -1193,7 +1200,7 @@ export class App extends Component {
                             <Form
                                 parent={this}
                                 items={etsyItems}
-                                loading={false}
+                                loading={this.state.ebay.loading}
                                 card={this.state.etsyuser}
                                 title={"Create your Etsy Credential"}
                                 platform={"etsy"}>

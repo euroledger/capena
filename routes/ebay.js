@@ -36,8 +36,7 @@ module.exports = (app) => {
         res.send("You are ok with us!"); // TODO privacy statement??
     });
 
-    app.get(
-        '/auth/ebay/callback',
+    app.get('/auth/ebay/callback',
         async (req, res) => {
             // req.body.query contains the code to be used for API calls (user token)
             const code = req.query.code;
