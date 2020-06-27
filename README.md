@@ -124,7 +124,7 @@ Assuming everything still works correctly, you are ready to run the application.
 
 - The main screen will be displayed:
 
-    <img src="assets/mainscreen.png"
+    <img src="assets/main.png"
         alt="Organizations"
         style="padding-top: 20px; padding-bottom: 20px" 
         width="600"
@@ -156,4 +156,11 @@ This is a connection invitation. Webhooks will automatically issue the User Deta
 
 Once this is done, eBay and Etsy credentials can be imported and then issued to the user wallet. 
 
+To login, a QR Code will be issued 
 
+
+### Issuing and Revoking Credentials
+
+To load user data from platforms select the platform and click on "Import User Reputation Data". You will be asked to sign in to that platfom.
+
+Once the data are loaded you can then Issue and Revoke credentials. On each occasion you will be asked to confirm or decline this on the mobile wallet app.
