@@ -10,7 +10,6 @@ import stackoverflowItems from './components/Fields/stackoverflow';
 import twitterItems from './components/Fields/twitter';
 import upworkItems from './components/Fields/upwork';
 import RegistrationDialog from './components/RegistrationDialog';
-import LoginDialog from './components/LoginDialog';
 import NavBar from './components/NavBar';
 import Form from './components/Form';
 import Paper from '@material-ui/core/Paper';
@@ -25,7 +24,10 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import axios from 'axios';
 import QRcode from 'qrcode.react';
 import crypto from 'crypto';
-
+import ebayRoutes from './routes/ebay';
+import etsyRoutes from './routes/etsy';
+import uberRoutes from './routes/uber';
+import signInRoutes from './routes/signInRoutes';
 
 axios.defaults.baseURL = 'https://localhost:3002/';
 axios.defaults.headers.post['Content-Type'] = 'application/json;charset=utf-8';
@@ -253,9 +255,7 @@ export class App extends Component {
             ebay: { ...prevState.ebay, credential_accepted: false }
         }));
 
-        await axios.post('/api/ebay/issue', ebayDSR);
-
-        await axios.post('/api/credential_accepted', null);
+        await ebayRoutes.issue(ebayDSR);
 
         console.log("CREDENTIAL ACCEPTED!!!");
         this.setState(prevState => ({
@@ -277,9 +277,8 @@ export class App extends Component {
             etsy: { ...prevState.etsy, credential_accepted: false }
         }));
 
-        await axios.post('/api/etsy/issue', etsyRatings);
+        await etsyRoutes.issue(etsyRatings);
 
-        await axios.post('/api/credential_accepted', null);
         this.setState(prevState => ({
             etsy: { ...prevState.etsy, credential_accepted: true, has_been_revoked: false }
         }));
@@ -300,9 +299,9 @@ export class App extends Component {
         }));
 
         console.log("ISSUING UBER CREDENTIALS: ", uberRatings);
-        await axios.post('/api/uber/issue', uberRatings);
 
-        await axios.post('/api/credential_accepted', null);
+        await uberRoutes.issue(uberRatings);
+
         this.setState(prevState => ({
             uber: { ...prevState.uber, credential_accepted: true, has_been_revoked: false }
         }));
@@ -314,7 +313,7 @@ export class App extends Component {
             ebay: { ...prevState.ebay, loading: true }
         }));
         console.log("Revoking EBAY credentials...");
-        await axios.post('/api/ebay/revoke', null);
+        await ebayRoutes.revoke();
 
         // reset state back to initial state, clear the form and the saved ebay session data
         this.setState(prevState => ({
@@ -337,7 +336,7 @@ export class App extends Component {
             etsy: { ...prevState.etsy, loading: true }
         }));
         console.log("Revoking ETSY credentials...");
-        await axios.post('/api/etsy/revoke', null);
+        await etsyRoutes.revoke();
 
         // reset state back to initial state, clear the form and the session data
         this.setState(prevState => ({
@@ -359,7 +358,8 @@ export class App extends Component {
             uber: { ...prevState.uber, loading: true }
         }));
         console.log("Revoking UBER credentials...");
-        await axios.post('/api/uber/revoke', null);
+
+        await uberRoutes.revoke();
 
         // reset state back to initial state, clear the form and the session data
         this.setState(prevState => ({
@@ -376,19 +376,19 @@ export class App extends Component {
 
     }
 
-    onVerify = async () => {
+    // onVerify = async () => {
 
-        this.setState(prevState => ({
-            ebay: { ...prevState.ebay, verification_accepted: false }
-        }));
-        console.log("Verifying credentials...");
-        await axios.post('/api/sendkeyverification', null);
-        await axios.get('/api/verification_accepted', null);
+    //     this.setState(prevState => ({
+    //         ebay: { ...prevState.ebay, verification_accepted: false }
+    //     }));
+    //     console.log("Verifying credentials...");
+    //     await axios.post('/api/sendkeyverification', null);
+    //     await axios.get('/api/verification_accepted', null);
 
-        this.setState(prevState => ({
-            ebay: { ...prevState.ebay, verification_accepted: true, has_been_revoked: false }
-        }));
-    }
+    //     this.setState(prevState => ({
+    //         ebay: { ...prevState.ebay, verification_accepted: true, has_been_revoked: false }
+    //     }));
+    // }
 
     setEbayFieldValue = (event) => {
         const { target: { name, value } } = event;
@@ -511,18 +511,18 @@ export class App extends Component {
     }
 
     postLogin = async () => {
-        console.log("GOING TO LOG IN...")
         this.setState({
             login_loading: true, loggingIn: true
         });
-        // const loginInfo = { passcode: code };
         let resp;
         try {
-            resp = await axios.post('/api/login', null);
+            resp = await signInRoutes.login();
         }
         catch (e) {
             console.log(e);
         }
+
+        console.log("LOGIN ok! resp = ", resp);
 
         this.setState({
             login_loading: false,
@@ -535,7 +535,8 @@ export class App extends Component {
         this.setQRFormOpen(true);
 
         console.log("WAITING FOR LOGIN DATA...")
-        const login = await axios.get('/api/loginconfirmed');
+
+        const login = await signInRoutes.waitForLoginConfirmed();
 
         this.setQRFormOpen(false);
 
@@ -575,11 +576,13 @@ export class App extends Component {
             passcode: passcode
         }
         console.log(registrationInfo);
-        const response = await axios.post('/api/register', registrationInfo);
+        const response = await signInRoutes.register(registrationInfo);
         console.log(response);
+
         this.setState({ invite_url: "https://web.cloud.streetcred.id/link/?c_i=" + response.data.invite_url });
 
-        const resp = await axios.get('/api/connected', null);
+        const resp = await signInRoutes.waitForConnection();
+
         this.setState(prevState => ({
             login: true,
             connection_name: resp.data,
@@ -589,7 +592,9 @@ export class App extends Component {
         }));
         sessionStorage.setItem("name", this.state.connection_name);
         sessionStorage.setItem("login", true);
-        await axios.post('/api/credential_accepted', null);
+
+        await signInRoutes.waitForCredentialAccepted();
+
         console.log("setting login to true");
 
         this.setState(prevState => ({
@@ -629,7 +634,7 @@ export class App extends Component {
 
     etsyGetUserData = async () => {
         console.log("Waiting for the (ETSY) feedback to arrive...");
-        const user = await axios.get('/api/etsy/feedback');
+        const user = await etsyRoutes.getFeedback();
 
         let count = user.data.feedback_info["count"];
         let score = user.data.feedback_info["score"];
@@ -662,7 +667,7 @@ export class App extends Component {
 
     ebayGetUserData = async () => {
         console.log("Waiting for the feedback to arrive...");
-        const user = await axios.get('/api/ebay/feedback');
+        const user = await ebayRoutes.getFeedback();
 
         console.log("User Data = ", user.data);
 
@@ -689,14 +694,16 @@ export class App extends Component {
         sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
         this.setState({ value: 0 });
     }
+    
     etsyAuth = async () => {
         console.log("Going across to Etsy!...");
         let res;
         try {
-            res = await axios.get('/auth/etsy');
+            res = etsyRoutes.getAuthentication();
         } catch (e) {
             console.log(">>>>>>>>>>>>>> e = ", e);
         }
+        console.log("----------------------------------------------------------- res.data = ", res);
 
         if (!res) {
             return;
@@ -709,13 +716,71 @@ export class App extends Component {
         this.etsyGetUserData();
     }
 
+    etsyGetUserData = async () => {
+        console.log("Waiting for the (ETSY) feedback to arrive...");
+        const user = await axios.get('/api/etsy/feedback');
+
+        let count = user.data.feedback_info["count"];
+        let score = user.data.feedback_info["score"];
+
+        score = score === null ? 0 : score;
+        console.log("User Data info = ", user.data.feedback_info["score"]);
+        console.log("score = ", score);
+
+        var d = new Date();
+        d.setMonth(d.getMonth() + 1);
+
+        this.setState(prevState => ({
+            etsy: {
+                ...prevState.etsy, qr_feedbackCollected: true,
+                loading: false
+            },
+            etsyuser: {
+                UserID: user.data.login_name,
+                FeedbackCount: count,
+                RegistrationDate: this.formatDate(new Date(user.data.creation_tsz * 1000)),
+                PositiveFeedbackPercent: score,
+                CreationDate: this.formatDate(d)
+            }
+        }));
+        sessionStorage.setItem("waitingForEtsyUserData", "false");
+        sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        sessionStorage.setItem("selectedTab", "1");
+        this.setState({ value: 1 });
+    }
+
+    etsyAuth = async () => {
+        console.log("Going across to Etsy!...");
+        let res = await etsyRoutes.getAuthentication();
+        // try {
+        //     // res = await axios.get('/auth/etsy');
+        //     res 
+        // } catch (e) {
+        //     console.log(">>>>>>>>>>>>>> e = ", e);
+        // }
+
+        if (!res) {
+            return;
+        }
+        console.log("res.data = ", res.data);
+        sessionStorage.setItem("waitingForEtsyUserData", "true");
+
+        window.location = res.data;
+
+        this.etsyGetUserData();
+    }
+
+
+
+
+
     ebayAuth = async () => {
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, loading: true }
         }));
 
         console.log("Going across to eBay! This route returns the Url for sign-in to ebay");
-        const res = await axios.get('/auth/ebay');
+        const res = await ebayRoutes.getAuthentication();
 
         sessionStorage.setItem("waitingForEbayUserData", "true");
         // switch to that URL
@@ -997,18 +1062,18 @@ export class App extends Component {
 
     }
 
-    ebaybutton() {
-        return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled("ebay")}
-            onClick={() => this.onVerify()}>
-            {this.getAcceptedLabelVerify("ebay")}
-        </Button>)
-    }
-    button2(platform) {
-        return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled(platform)}
-            onClick={() => this.onEtsyVerify()}>
-            {this.getAcceptedLabelVerify("etsy")}
-        </Button>)
-    }
+    // ebaybutton() {
+    //     return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled("ebay")}
+    //         onClick={() => this.onVerify()}>
+    //         {this.getAcceptedLabelVerify("ebay")}
+    //     </Button>)
+    // }
+    // button2(platform) {
+    //     return (<Button style={{ backgroundColor: '#e8624a', marginTop: '20px' }} disabled={this.getVerifyDisabled(platform)}
+    //         onClick={() => this.onEtsyVerify()}>
+    //         {this.getAcceptedLabelVerify("etsy")}
+    //     </Button>)
+    // }
 
     getQRCodeLabel() {
         return this.state.registering ? "Scan this QR code to Register with Capena" : "Scan this QR code to Login"
