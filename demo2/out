@@ -1,0 +1,57 @@
+Preparing agent image...
+Sending build context to Docker daemon  17.03MB
+Step 1/17 : FROM bcgovimages/von-image:py36-1.14-1
+ ---> 74087ed5480b
+Step 2/17 : ENV ENABLE_PTVSD 0
+ ---> Using cache
+ ---> cb64544a117a
+Step 3/17 : ENV ENABLE_PYDEVD_PYCHARM 0
+ ---> Using cache
+ ---> 2e6faee56549
+Step 4/17 : ENV PYDEVD_PYCHARM_HOST "host.docker.internal"
+ ---> Using cache
+ ---> 131852c3a551
+Step 5/17 : ADD requirements*.txt ./
+ ---> Using cache
+ ---> 0c081076ca4c
+Step 6/17 : RUN pip3 install --no-cache-dir -r requirements.txt -r requirements.dev.txt
+ ---> Using cache
+ ---> 0b812ed146f5
+Step 7/17 : ADD aries_cloudagent ./aries_cloudagent
+ ---> Using cache
+ ---> f3f322806c0e
+Step 8/17 : ADD bin ./bin
+ ---> Using cache
+ ---> c59e0ab96921
+Step 9/17 : ADD README.md ./
+ ---> Using cache
+ ---> 2b6c7821cb64
+Step 10/17 : ADD scripts ./scripts
+ ---> Using cache
+ ---> bd946c9d8a94
+Step 11/17 : ADD setup.py ./
+ ---> Using cache
+ ---> 436e5dac6965
+Step 12/17 : RUN pip3 install --no-cache-dir -e .
+ ---> Using cache
+ ---> d2de9e66adeb
+Step 13/17 : RUN mkdir demo logs && chown -R indy:indy demo logs && chmod -R ug+rw demo logs
+ ---> Using cache
+ ---> d6ca4298a3b2
+Step 14/17 : ADD demo/requirements.txt ./demo/requirements.txt
+ ---> Using cache
+ ---> 224f48406079
+Step 15/17 : RUN pip3 install --no-cache-dir -r demo/requirements.txt
+ ---> Using cache
+ ---> 0c283f861d2d
+Step 16/17 : ADD demo ./demo
+ ---> Using cache
+ ---> 9bb26522e6e7
+Step 17/17 : ENTRYPOINT ["/bin/bash", "-c", "python -m demo.runners.$@", "--"]
+ ---> Using cache
+ ---> de320de73fb4
+Successfully built de320de73fb4
+Successfully tagged faber-alice-demo:latest
+192.168.99.100
+Starting alice...
+docker run --name alice --rm -it  	-p 0.0.0.0:8030-8037:8030-8037 	-v //home/mike/aries/euroledger/aries-cloudagent-python/demo/../logs:/home/indy/logs 	-e LOG_LEVEL= -e RUNMODE=docker -e DOCKERHOST=192.168.99.100 	faber-alice-demo alice --port 8030 

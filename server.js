@@ -98,16 +98,21 @@ app.post('/webhook', async function (req, res) {
             // if (connected) {
             if (platform === "ebay") {
                 ebayCredentialId = req.body.object_id;
-                console.log("Issuing credential to wallet, id = ", ebayCredentialId);
+                console.log("Issuing ebay credential to wallet, id = ", ebayCredentialId);
                 await client.issueCredential(ebayCredentialId);
             } else if (platform === "etsy") {
                 etsyCredentialId = req.body.object_id;
-                console.log("Issuing credential to wallet, id = ", etsyCredentialId);
+                console.log("Issuing etsy credential to wallet, id = ", etsyCredentialId);
                 await client.issueCredential(etsyCredentialId);
             } else if (platform === "uber") {
                 uberCredentialId = req.body.object_id;
-                console.log("Issuing credential to wallet, id = ", uberCredentialId);
+                console.log("Issuing uber credential to wallet, id = ", uberCredentialId);
                 await client.issueCredential(uberCredentialId);
+            } else {
+                // user details
+                userRegistrationCredentialId = req.body.object_id;
+                console.log("Issuing user details credential to wallet, id = ", userRegistrationCredentialId);
+                await client.issueCredential(userRegistrationCredentialId);
             }
             console.log("Credential Issue -> DONE");
             credentialAccepted = true;

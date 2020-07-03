@@ -1,0 +1,7 @@
+echo "Preparing agent image..."
+# docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
+
+docker build -t alice-js -f ./docker/Dockerfile.jsdemo .. || exit 1
+docker run --name alice --rm -it -p 0.0.0.0:8030-8037:8030-8037 -e RUNMODE=docker -e DOCKERHOST=192.168.99.100  alice-js 
+
+
