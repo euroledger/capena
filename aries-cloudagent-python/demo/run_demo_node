@@ -1,0 +1,45 @@
+if [[ "$1" != "" ]]; then
+    AGENT="$1"
+else
+    echo "Usage:    ./demo_run_node <agent>"
+    exit 0
+fi
+
+echo "running demo for agent ${AGENT}"
+echo "Preparing agent image..."
+# docker build -q -t faber-alice-demo -f ../docker/Dockerfile.demo .. || exit 1
+
+if [ "$AGENT" = "faber" ]; then
+  AGENT_MODULE="faber"
+  AGENT_NAME="faber-js"
+  AGENT_PORT=8020
+  AGENT_PORT_RANGE=8020-8027
+  AGENT_DOCKERFILE=Dockerfile.jsdemofaber
+elif [ "$AGENT" = "alice" ]; then
+  AGENT_MODULE="alice"
+  AGENT_NAME="alice-js"
+  AGENT_PORT=8030
+  AGENT_PORT_RANGE=8030-8037
+  AGENT_DOCKERFILE=Dockerfile.jsdemoalice
+fi
+
+
+
+docker build -t $AGENT_NAME -f ../docker/$AGENT_DOCKERFILE .. || exit 1
+
+if [ -z "$AGENT_ENDPOINT" ]; then
+    echo "Checking for Agent end point from ngrok service"
+    NGROK_ENDPOINT=$(curl --silent localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+
+    if [ -z "$NGROK_ENDPOINT" ] || [ "$NGROK_ENDPOINT" = "null" ]; then
+        echo "ngrok not running for Agent endpoint ...."
+    else
+        export AGENT_ENDPOINT=$NGROK_ENDPOINT
+        echo "fetched Agent end point [$AGENT_ENDPOINT]"
+        DOCKER_ENV="${DOCKER_ENV} -e AGENT_ENDPOINT=${AGENT_ENDPOINT}"
+    fi
+fi
+
+docker run --name $AGENT_MODULE --rm -it -p 0.0.0.0:${AGENT_PORT_RANGE}:${AGENT_PORT_RANGE} -e AGENT_ENDPOINT=${AGENT_ENDPOINT} -e RUNMODE=docker -e DOCKERHOST=192.168.99.100  $AGENT_NAME 
+
+
