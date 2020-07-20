@@ -257,7 +257,6 @@ export class App extends Component {
 
         await ebayRoutes.issue(ebayDSR);
 
-        console.log("CREDENTIAL ACCEPTED!!!");
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, credential_accepted: true, has_been_revoked: false }
         }));
@@ -278,6 +277,8 @@ export class App extends Component {
         }));
 
         await etsyRoutes.issue(etsyRatings);
+        console.log("CREDENTIAL ACCEPTED!!!");
+
 
         this.setState(prevState => ({
             etsy: { ...prevState.etsy, credential_accepted: true, has_been_revoked: false }
@@ -439,7 +440,10 @@ export class App extends Component {
                 }
             }));
             sessionStorage.setItem("waitingForEbayUserData", "false");
-            sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
+            // sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
+            // sessionStorage.setItem("ebayStateData", JSON.stringify(this.state.ebay));
+            sessionStorage.setItem("state", JSON.stringify(this.state));
+
         }
     }
 
@@ -470,7 +474,8 @@ export class App extends Component {
                 }
             }));
             sessionStorage.setItem("waitingForEtsyUserData", "false");
-            sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+            // sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+            sessionStorage.setItem("state", JSON.stringify(this.state));
         }
     }
 
@@ -500,14 +505,18 @@ export class App extends Component {
                     CreationDate: this.formatDate(new Date(d))
                 }
             }));
-            sessionStorage.setItem("uberUserData", JSON.stringify(this.state.uberuser));
+            // sessionStorage.setItem("uberUserData", JSON.stringify(this.state.uberuser));
+            sessionStorage.setItem("state", JSON.stringify(this.state));
         }
     }
 
-    logout = () => {
+    logout = async () => {
         // reset all forms, reset component state, 
         console.log("Logging out...");
+        await signInRoutes.signout();
+        console.log("Setting state back to init state")
         this.setState(initState);
+        sessionStorage.setItem("state", null);
     }
 
     postLogin = async () => {
@@ -660,7 +669,9 @@ export class App extends Component {
             }
         }));
         sessionStorage.setItem("waitingForEtsyUserData", "false");
-        sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        // sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        sessionStorage.setItem("state", JSON.stringify(this.state));
+
         sessionStorage.setItem("selectedTab", "1");
         this.setState({ value: 1 });
     }
@@ -691,7 +702,10 @@ export class App extends Component {
 
         window.stop();
         sessionStorage.setItem("waitingForEbayUserData", "false");
-        sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
+        // sessionStorage.setItem("ebayUserData", JSON.stringify(this.state.user));
+        // sessionStorage.setItem("ebayStateData", JSON.stringify(this.state.ebay));
+        sessionStorage.setItem("state", JSON.stringify(this.state));
+
         this.setState({ value: 0 });
     }
     
@@ -744,7 +758,11 @@ export class App extends Component {
             }
         }));
         sessionStorage.setItem("waitingForEtsyUserData", "false");
-        sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        // sessionStorage.setItem("etsyUserData", JSON.stringify(this.state.etsyuser));
+        // sessionStorage.setItem("etsyStateData", JSON.stringify(this.state.etsy));
+        // sessionStorage.setItem("ebayStateData", JSON.stringify(this.state.ebay));
+        // sessionStorage.setItem("uberStateData", JSON.stringify(this.state.uber));
+        sessionStorage.setItem("state", JSON.stringify(this.state));
         sessionStorage.setItem("selectedTab", "1");
         this.setState({ value: 1 });
     }
@@ -1043,6 +1061,8 @@ export class App extends Component {
     }
 
     button() {
+        console.log("EBAY button state...this.state.ebay.qr_feedbackCollected = ", this.state.ebay.qr_feedbackCollected);
+        console.log("EBAY button state...this.state.ebay.has_been_revoked = ", this.state.ebay.has_been_revoked);
         if (!this.state.ebay.qr_feedbackCollected) {
             return (<Button className="registerbutton"
                 onClick={() => this.onFeedback()} disabled={this.getDisabled("ebay")}>
@@ -1107,16 +1127,11 @@ export class App extends Component {
     }
 
     reloadEtsyUserDetails() {
-        const etsy = JSON.parse(sessionStorage.getItem("etsyUserData"));
-        console.log("ETSY = ", etsy);
-        if (etsy) {
+        const state = JSON.parse(sessionStorage.getItem("state"));
+        console.log("state = ", state);
+        if (state) {
             this.setState(prevState => ({
-                etsyuser: { ...prevState.etsy, ...etsy },
-                etsy: {
-                    credential_accepted: true,
-                    has_been_revoked: true,
-                    qr_feedbackCollected: true
-                }
+                state: { ...prevState, state}
             }));
         }
     }
@@ -1130,24 +1145,19 @@ export class App extends Component {
                 uber: {
                     credential_accepted: true,
                     has_been_revoked: true,
-                    qr_feedbackCollected: true
+                    qr_feedbackCollected: true,
+                    loading: false
                 }
             }));
         }
     }
 
     reloadEbayUserDetails() {
-        const ebay = JSON.parse(sessionStorage.getItem("ebayUserData"));
-        console.log("EBAY = ", ebay);
-        if (ebay) {
+        const state = JSON.parse(sessionStorage.getItem("state"));
+        console.log("state = ", state);
+        if (state) {
             this.setState(prevState => ({
-                user: { ...prevState.ebay, ...ebay },
-                ebay: {
-                    credential_accepted: true,
-                    has_been_revoked: true,
-                    loading: false,
-                    qr_feedbackCollected: true
-                }
+                state: { ...prevState, state}
             }));
         }
     }
@@ -1162,9 +1172,9 @@ export class App extends Component {
 
     componentDidMount() {
         this.reloadLoginDetails();
-        this.reloadEtsyUserDetails();
+        // this.reloadEtsyUserDetails();
         this.reloadEbayUserDetails();
-        this.reloadUberUserDetails();
+        // this.reloadUberUserDetails();
         console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>> TAB = ", sessionStorage.getItem("selectedTab"));
         if (sessionStorage.getItem("selectedTab")) {
             console.log("Setting selected tab to ", sessionStorage.getItem("selectedTab"))

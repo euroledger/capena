@@ -13,6 +13,9 @@ const signInRoutes = {
     async login() {
         return await axios.post('/api/login', null);
     },
+    async signout() {
+        return await axios.get('/api/signout', null);
+    },
     async waitForLoginConfirmed() {
         return await axios.get('/api/loginconfirmed');
     } 

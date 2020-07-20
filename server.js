@@ -150,12 +150,16 @@ app.post('/webhook', async function (req, res) {
 
                 // retreive all credentials for this id
                 let credentials = await client.listCredentials();
+                var issuedCredentialsForThisConnection = credentials.filter(function (credential) {
+                    return credential.connectionId === connectionId;
+                });
+                console.log(issuedCredentialsForThisConnection)
 
                 var issuedCredentialsForThisUser = credentials.filter(function (credential) {
                     return credential.state === "Issued" && credential.connectionId === connectionId;
                 });
 
-                console.log(issuedCredentialsForThisUser);
+                // console.log(issuedCredentialsForThisUser);
 
                 connectionAndCredentials = {
                     connectionContract: connectionContract,
@@ -317,9 +321,16 @@ app.post('/api/login', cors(), async function (req, res) {
     res.status(200).send({ login_request_url: resp.verificationRequestUrl });
 });
 
+app.get('/api/signout', cors(), async function (req, res) {
+    console.log("Signing out...");
+    loginConfirmed = false;
+    res.status(200).send();
+});
+
 app.get('/api/loginconfirmed', cors(), async function (req, res) {
-    console.log("Waiting for login confirmation...");
+    console.log("Waiting for login confirmation...loginConfirmed = ", loginConfirmed);
     await utils.until(_ => loginConfirmed === true);
+    console.log("--> DONE off we go")
     res.status(200).send(connectionAndCredentials);
 });
 
@@ -449,6 +460,7 @@ var server = server.listen(PORT, async function () {
 
     try {
         const url_val = process.env.NGROK_URL + "/webhook";
+        
         console.log("Using ngrok (webhook) url of ", url_val);
         var response = await client.createWebhook({
             webhookParameters: {
