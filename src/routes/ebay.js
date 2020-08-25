@@ -4,6 +4,7 @@ const ebayRoutes = {
     async issue(ebayDSR) {
         await axios.post('/api/ebay/issue', ebayDSR);
     
+        console.log("BARK waiting for credential to be accepted...");
         await axios.post('/api/credential_accepted', null);
     },
     async revoke() {

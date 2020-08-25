@@ -257,6 +257,8 @@ export class App extends Component {
 
         await ebayRoutes.issue(ebayDSR);
 
+        console.log("QUACK >>>>>>>>>>>>> we have done the ebay issue");
+
         this.setState(prevState => ({
             ebay: { ...prevState.ebay, credential_accepted: true, has_been_revoked: false }
         }));
@@ -787,10 +789,6 @@ export class App extends Component {
 
         this.etsyGetUserData();
     }
-
-
-
-
 
     ebayAuth = async () => {
         this.setState(prevState => ({
