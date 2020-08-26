@@ -7,16 +7,17 @@ module.exports = (app) => {
     let feedbackObtained = false;
 
     console.log("EBAY_CLIENT_ID = ", process.env.EBAY_CLIENT_ID);
+    console.log("EBAY_CLIENT_ID = ", process.env.EBAY_CLIENT_SECRET);
 
     const eBay = new eBayApi({
-        appId: 'MikeRich-EuroLedg-PRD-f193ff38b-ecdaff89',
-        certId: 'PRD-193ff38bb57e-c123-43e7-ac39-b145',
+        appId: process.env.EBAY_CLIENT_ID,
+        certId: process.env.EBAY_CLIENT_SECRET,
         sandbox: false,
         siteId: eBayApi.SiteId.EBAY_GB, // see https://developer.ebay.com/DevZone/merchandising/docs/Concepts/SiteIDToGlobalID.html
 
         // optinal parameters, should be omitted if not used
-        devId: '5ac3b11b-0734-4a47-a382-726a92d7a7aa', // required for traditional trading API
-        ruName: 'Mike_Richardson-MikeRich-EuroLe-jkelbu' // Required for authorization code grant
+        devId: process.env.EBAY_DEV_ID, // required for traditional trading API
+        ruName: process.env.EBAY_RUNAME // Required for authorization code grant
     });
 
     app.get('/auth/ebay', cors(), function (req, res) {

@@ -1,3 +1,0 @@
-docker build -t alice-js .
-docker run -it -e RUNMODE=docker -e DOCKERHOST=192.168.99.100 -p 3000:3000 alice-js 
-

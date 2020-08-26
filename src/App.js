@@ -1230,7 +1230,7 @@ export class App extends Component {
                     </div> */}
                     <Paper style={{
                         height: '800px',
-                        backgroundImage: `url(${"main.jpg"})`,
+                        backgroundImage: `url(${"hospital.jpg"})`,
                         backgroundRepeat: "no-repeat",
                         backgroundPosition: "center center",
                         backgroundSize: "cover",
